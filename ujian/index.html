@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Sistem Ujian - AlbEdu</title>
+    <meta name="description" content="Sistem Ujian Online AlbEdu">
+    <meta name="theme-color" content="#2563eb">
+    
+    <link rel="icon" href="../assets/images/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="development-container">
+        <div class="development-card">
+            <div class="development-icon">📝</div>
+            
+            <div class="development-message">
+                <h2>Sistem Ujian AlbEdu</h2>
+                <p>Halaman ini sedang dalam pengembangan 🤖</p>
+                <p>Sistem ujian online untuk siswa dan administrator.</p>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <button onclick="goBackBasedOnRole()" class="back-button">Kembali</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/system.js"></script>
+    
+    <script>
+        function goBackBasedOnRole() {
+            // Ambil role dari system.js jika tersedia
+            if (typeof userRole !== 'undefined') {
+                if (userRole === 'admin') {
+                    window.location.href = '../admin';
+                } else {
+                    window.location.href = '../siswa';
+                }
+            } else {
+                // Fallback ke halaman sebelumnya
+                window.history.back();
+            }
+        }
+    </script>
+</body>
+</html>
