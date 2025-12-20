@@ -1,7 +1,7 @@
-// ByteWard v0.1.3 - AlbEdu Security & Profile System
+// ByteWard v0.1.4 - AlbEdu Security & Profile System
 // Advanced Security with Real-time Profile Management
 
-console.log('🚀 Memuat ByteWard v0.1.3 - Sistem Keamanan AlbEdu...');
+console.log('🚀 Memuat ByteWard v0.1.4 - Sistem Keamanan AlbEdu...');
 
 // =======================  
 // Global State  
@@ -11,6 +11,7 @@ let userRole = null;
 let userData = null;  
 let authReady = false;  
 let profileListener = null;  
+let redirectInProgress = false; // FIX: Prevent redirect loops
 
 // =======================  
 // Constants  
@@ -19,7 +20,7 @@ const DEFAULT_AVATARS = [
     {  
         id: 'github',  
         name: 'GitHub Identicon',  
-        url: null, // Will be generated based on email  
+        url: null,
         color: '#1f2937'  
     },  
     {  
@@ -63,21 +64,45 @@ let profileState = {
     customAvatar: null,  
     tempName: '',  
     isLoading: false,  
-    hasChanges: false  
+    hasChanges: false,
+    autoCloseTriggered: false // FIX: Track auto-close state
 };  
 
 // =======================  
 // Core Utilities  
 // =======================  
 function getBasePath() {  
+    // FIX: Safer base path detection for root and subfolders
     const path = window.location.pathname;
-    const base = path.split('/')[1] || '';
-    return base ? `/${base}` : '';
+    const parts = path.split('/').filter(p => p);
+    
+    // Jika ada base path (misal: /subfolder), return dengan leading slash
+    if (parts.length > 0 && !path.includes('/login')) {
+        // Ambil base folder pertama sebagai base path
+        return `/${parts[0]}`;
+    }
+    
+    // Untuk root atau halaman login langsung di root
+    if (path === '/' || path.startsWith('/login')) {
+        return '';
+    }
+    
+    // Default ke root
+    return '';  
 }  
 
 function isLoginPage() {  
-    const path = window.location.pathname;  
-    return path.includes('login') || path.endsWith('/') || path.endsWith('/login.html');
+    // FIX: Avoid false positive on root path
+    const path = window.location.pathname;
+    const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
+    
+    // Check for exact login paths
+    if (normalizedPath === '' || normalizedPath === '/') return false; // Root bukan login page
+    
+    return normalizedPath.includes('/login') || 
+           normalizedPath.endsWith('login.html') ||
+           normalizedPath === '/login' ||
+           normalizedPath === getBasePath() + '/login';
 }  
 
 function generateGitHubAvatar(email) {  
@@ -595,8 +620,9 @@ async function saveProfile() {
             currentName.textContent = updates.nama;  
         }  
           
-        // Auto close if profile is now complete and this was first time  
-        if (willBeComplete && !userData.profilLengkap) {  
+        // FIX: Auto close only if profile was incomplete and now complete
+        if (willBeComplete && !profileState.autoCloseTriggered) {  
+            profileState.autoCloseTriggered = true;
             setTimeout(() => {  
                 hideProfilePanel();  
             }, 1500);  
@@ -695,14 +721,18 @@ function injectProfileCSS() {
 async function fetchUserData(userId) {  
     console.log('📡 Mengambil data user dari Firestore...');  
       
-    // Set up real-time listener  
-    if (profileListener) {  
-        profileListener(); // Unsubscribe previous listener  
-    }  
-      
-    const ref = firebaseDb.collection('users').doc(userId);  
-      
+    // FIX: Return promise that resolves once with initial data
     return new Promise((resolve, reject) => {
+        // Clean up previous listener
+        if (profileListener) {  
+            profileListener();  
+            profileListener = null;  
+        }  
+          
+        const ref = firebaseDb.collection('users').doc(userId);  
+        
+        let resolved = false;
+        
         profileListener = ref.onSnapshot(async (snap) => {  
             try {  
                 if (snap.exists) {  
@@ -718,7 +748,11 @@ async function fetchUserData(userId) {
                         profileComplete: profileState.isProfileComplete   
                     });  
                       
-                    resolve(userData);
+                    // Resolve promise only on first load
+                    if (!resolved) {
+                        resolved = true;
+                        resolve(userData);
+                    }
                       
                     // Update UI if user is logged in  
                     if (currentUser) {  
@@ -740,15 +774,23 @@ async function fetchUserData(userId) {
                       
                 } else {  
                     console.log('📝 Data user belum ada, membuat data baru...');  
-                    await createUserData(userId);  
+                    const newData = await createUserData(userId);  
+                    if (!resolved) {
+                        resolved = true;
+                        resolve(newData);
+                    }
                 }  
             } catch (error) {  
                 console.error('Error in user data listener:', error);  
-                reject(error);
+                if (!resolved) {
+                    reject(error);
+                }
             }  
         }, (error) => {  
             console.error('Firestore listener error:', error);  
-            reject(error);
+            if (!resolved) {
+                reject(error);
+            }
         });  
     });
 }  
@@ -860,18 +902,20 @@ async function checkPageAccess() {
     
     // Normalize path for comparison
     let normalizedPath = currentPath;
-    if (getBasePath() && currentPath.startsWith(getBasePath())) {
-        normalizedPath = currentPath.substring(getBasePath().length);
+    const base = getBasePath();
+    
+    if (base && normalizedPath.startsWith(base)) {
+        normalizedPath = normalizedPath.substring(base.length);
     }
     
-    if (normalizedPath.endsWith('/')) {
-        normalizedPath = normalizedPath.slice(0, -1);
-    }
+    if (normalizedPath === '') normalizedPath = '/';
     
     // Check if current path is allowed
     let isAllowed = false;
     for (const allowedPath of allowed) {
-        if (normalizedPath === allowedPath || normalizedPath.startsWith(allowedPath + '/')) {
+        if (normalizedPath === allowedPath || 
+            normalizedPath.startsWith(allowedPath + '/') ||
+            (allowedPath === '/' && normalizedPath === '/')) {
             isAllowed = true;
             break;
         }
@@ -891,11 +935,16 @@ async function checkPageAccess() {
 // Redirect System  
 // =======================  
 function redirectBasedOnRole() {
+    // FIX: Prevent redirect loops
+    if (redirectInProgress) return;
+    
     if (!currentUser || !userRole) {
         console.log('⚠️ Menunggu data user...');
         setTimeout(redirectBasedOnRole, 500);
         return;
     }
+    
+    redirectInProgress = true;
     
     const base = getBasePath();
     let target = '';
@@ -910,8 +959,9 @@ function redirectBasedOnRole() {
     
     // Check if we're already on the target page
     const currentPath = window.location.pathname;
-    if (currentPath.includes(target.replace(base, ''))) {
+    if (currentPath === target || currentPath.includes(target.replace(base, ''))) {
         console.log('✅ Sudah berada di halaman yang benar');
+        redirectInProgress = false;
         return;
     }
     
@@ -924,39 +974,59 @@ function redirectBasedOnRole() {
 }  
 
 function redirectToLogin() {  
+    // FIX: Prevent redirect loops
+    if (redirectInProgress) return;
+    
     const base = getBasePath();
     const target = `${base}/login.html`;
     
     // Check if already on login page
-    if (window.location.pathname.includes('login.html')) {
+    if (window.location.pathname.includes('login.html') || isLoginPage()) {
         return;
     }
     
+    redirectInProgress = true;
     console.log('🔄 Redirect ke login:', target);
+    
     setTimeout(() => {
         window.location.replace(target);
     }, 500);
 }  
 
 function showAccessDenied() {  
+    // FIX: Prevent redirect loops
+    if (redirectInProgress) return;
+    
+    redirectInProgress = true;
     const base = getBasePath();  
-    if (userRole === 'admin') {
-        window.location.href = `${base}/admin/dashboard.html`;
-    } else if (userRole === 'siswa') {
-        window.location.href = `${base}/siswa/dashboard.html`;
-    } else {
-        window.location.href = `${base}/login.html`;  
-    }
+    
+    setTimeout(() => {
+        if (userRole === 'admin') {
+            window.location.href = `${base}/admin/dashboard.html`;
+        } else if (userRole === 'siswa') {
+            window.location.href = `${base}/siswa/dashboard.html`;
+        } else {
+            window.location.href = `${base}/login.html`;  
+        }
+    }, 1000);
 }  
 
 // =======================  
 // System Initialization  
 // =======================  
 async function initializeSystem() {  
-    console.log('⚙️ Menginisialisasi ByteWard v0.1.3...');  
+    console.log('⚙️ Menginisialisasi ByteWard v0.1.4...');  
     console.log('📍 Base Path:', getBasePath());
     console.log('📍 Current Path:', window.location.pathname);
     console.log('📍 Is Login Page:', isLoginPage());
+    
+    // FIX: Check Firebase availability
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+        console.error('❌ Firebase tidak tersedia');
+        showError('Firebase belum dimuat. Silakan refresh halaman.');
+        hideAuthLoading();
+        return;
+    }
     
     showAuthLoading('Mengecek status autentikasi…');  
       
@@ -999,7 +1069,9 @@ async function initializeSystem() {
             console.error('❌ Auth flow error:', err);  
             hideAuthLoading();  
             showError('Terjadi kesalahan sistem autentikasi');  
-        }  
+        } finally {
+            redirectInProgress = false; // Reset redirect lock
+        }
     });  
 }  
 
@@ -1040,7 +1112,7 @@ function showError(message) {
 // =======================  
 window.debugByteWard = function() {
     console.log('=== ByteWard Debug Info ===');
-    console.log('Version: 0.1.3');
+    console.log('Version: 0.1.4');
     console.log('Current User:', currentUser);
     console.log('User Role:', userRole);
     console.log('User Data:', userData);
@@ -1048,6 +1120,8 @@ window.debugByteWard = function() {
     console.log('Base Path:', getBasePath());
     console.log('Is Login Page:', isLoginPage());
     console.log('Current Path:', window.location.pathname);
+    console.log('Auth Ready:', authReady);
+    console.log('Redirect in Progress:', redirectInProgress);
     console.log('==========================');
 };
 
@@ -1075,4 +1149,4 @@ window.checkPageAccess = checkPageAccess;
 window.showProfilePanel = showProfilePanel;  
 window.debugByteWard = debugByteWard;
 
-console.log('🛡️ ByteWard v0.1.3 AKTIF. Sistem keamanan dengan profil real-time telah diaktifkan.');  
+console.log('🛡️ ByteWard v0.1.4 AKTIF. Sistem keamanan dengan profil real-time telah diaktifkan.');  
