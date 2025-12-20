@@ -1,30 +1,32 @@
-// =========================================
-// AlbEdu - AlByte Guard v2.5 (FINAL)
-// Auth Stabil • Anti Loop • Profile Morph UI
-// =========================================
+// =====================================================
+// AlbEdu - AlByte Guard v3.0 (STABIL FINAL)
+// Anti Infinite Loop • Auth Aman • Profil Realtime
+// Semua log & debug: BAHASA INDONESIA
+// =====================================================
 
-console.log('🔥 AlByte Guard v2.5 aktif');
+console.log('[SYSTEM] AlByte Guard dimuat');
 
-// =======================
+// =====================================================
 // GLOBAL STATE
-// =======================
+// =====================================================
 let currentUser = null;
 let userRole = null;
 let userData = null;
-let authReady = false;
-let hasRedirected = false;
 
-// =======================
-// PERMISSIONS (JANGAN DIUBAH)
-// =======================
+let authInitialized = false;
+let authResolved = false;
+
+// =====================================================
+// ROLE PERMISSIONS (JANGAN DIUBAH)
+// =====================================================
 const rolePermissions = {
     admin: ['/', '/login', '/admin', '/admin/creates', '/admin/panel', '/ujian'],
     siswa: ['/', '/login', '/siswa', '/ujian']
 };
 
-// =======================
+// =====================================================
 // PATH UTILS
-// =======================
+// =====================================================
 function getBasePath() {
     const parts = window.location.pathname.split('/');
     return `/${parts[1]}`;
@@ -34,110 +36,110 @@ function isLoginPage() {
     return window.location.pathname.endsWith('/login.html');
 }
 
-// =======================
-// LOADING
-// =======================
-function showAuthLoading(text = 'Memverifikasi sesi…') {
-    const el = document.getElementById('loadingIndicator');
-    if (!el) return;
-    el.style.display = 'flex';
-    el.querySelector('p').textContent = text;
-}
+// =====================================================
+// SYSTEM INIT
+// =====================================================
+function initializeSystem() {
+    if (authInitialized) {
+        console.warn('[SYSTEM] Inisialisasi sudah pernah dijalankan, dibatalkan');
+        return;
+    }
 
-function hideAuthLoading() {
-    const el = document.getElementById('loadingIndicator');
-    if (el) el.style.display = 'none';
-}
-
-// =======================
-// INIT SYSTEM
-// =======================
-async function initializeSystem() {
-    showAuthLoading('Mengecek autentikasi…');
+    authInitialized = true;
+    console.log('[SYSTEM] Memulai inisialisasi autentikasi');
 
     firebaseAuth.onAuthStateChanged(async (user) => {
+        if (authResolved) {
+            console.warn('[AUTH] Status auth sudah diproses, abaikan');
+            return;
+        }
+
+        authResolved = true;
+
         try {
             if (user) {
+                console.log('[AUTH] Pengguna terdeteksi login:', user.email);
                 currentUser = user;
-                showAuthLoading('Memuat data pengguna…');
 
                 await fetchUserData(user.uid);
                 listenUserRealtime(user.uid);
 
-                await checkPageAccess();
-
-                authReady = true;
-                hideAuthLoading();
+                await safeCheckAccess();
 
                 if (userRole === 'siswa') {
                     injectProfileUI();
                 }
 
-            } else {
-                currentUser = null;
-                userRole = null;
-                userData = null;
-                authReady = true;
-                hideAuthLoading();
+                console.log('[SYSTEM] Autentikasi & halaman siap');
 
-                if (!isLoginPage() && !hasRedirected) {
-                    hasRedirected = true;
-                    redirectToLogin();
+            } else {
+                console.log('[AUTH] Tidak ada pengguna login');
+
+                if (!isLoginPage()) {
+                    console.warn('[REDIRECT] Arahkan ke halaman login');
+                    location.replace(`${getBasePath()}/login.html`);
                 }
             }
         } catch (err) {
-            console.error(err);
-            hideAuthLoading();
-            showError('Kesalahan sistem autentikasi');
+            console.error('[SYSTEM ERROR]', err);
+            alert('Terjadi kesalahan sistem. Silakan refresh halaman.');
         }
     });
 }
 
-// =======================
+// =====================================================
 // FIRESTORE USER
-// =======================
+// =====================================================
 async function fetchUserData(uid) {
+    console.log('[FIRESTORE] Mengambil data pengguna');
+
     const ref = firebaseDb.collection('users').doc(uid);
     const snap = await ref.get();
 
     if (snap.exists) {
         userData = snap.data();
         userRole = userData.peran || 'siswa';
+        console.log('[FIRESTORE] Data pengguna ditemukan:', userRole);
     } else {
+        console.warn('[FIRESTORE] Data belum ada, membuat data baru');
         await createUserData(uid);
         await fetchUserData(uid);
     }
 }
 
-// =======================
-// RANDOM DATA GENERATOR (INDONESIA)
-// =======================
-const randomNames = [
-    'Siswa Cerdas', 'Pelajar Nusantara', 'Anak Bangsa',
-    'Siswa Hebat', 'Pelajar Pintar', 'Generasi Emas'
+// =====================================================
+// DATA RANDOM (INDONESIA, EDUKATIF)
+// =====================================================
+const namaAcak = [
+    'Siswa Cerdas',
+    'Pelajar Nusantara',
+    'Generasi Emas',
+    'Siswa Berprestasi',
+    'Pelajar Hebat Indonesia'
 ];
 
-const defaultAvatars = Array.from({ length: 20 }).map(
-    (_, i) => `https://github.com/identicons/avatar-${i}.png`
+const avatarBawaan = Array.from({ length: 20 }).map(
+    (_, i) => `https://github.com/identicons/albedu-${i}.png`
 );
 
-function pickRandomOnce(seed) {
-    return defaultAvatars[
-        Math.abs(seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % defaultAvatars.length
-    ];
+function pilihAvatarSekali(seed) {
+    let total = 0;
+    for (let i = 0; i < seed.length; i++) {
+        total += seed.charCodeAt(i);
+    }
+    return avatarBawaan[total % avatarBawaan.length];
 }
 
-// =======================
-// CREATE USER (ONCE)
-// =======================
+// =====================================================
+// CREATE USER (HANYA SEKALI SEUMUR AKUN)
+// =====================================================
 async function createUserData(uid) {
     const user = firebaseAuth.currentUser;
-    const avatar = pickRandomOnce(user.email);
 
     const payload = {
         id: uid,
-        nama: randomNames[Math.floor(Math.random() * randomNames.length)],
-        foto_profil: avatar,
+        nama: namaAcak[Math.floor(Math.random() * namaAcak.length)],
+        foto_profil: pilihAvatarSekali(user.email),
         peran: 'siswa',
         profilLengkap: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -145,97 +147,94 @@ async function createUserData(uid) {
     };
 
     await firebaseDb.collection('users').doc(uid).set(payload);
+    console.log('[FIRESTORE] Data pengguna baru dibuat');
 }
 
-// =======================
+// =====================================================
 // REALTIME LISTENER
-// =======================
+// =====================================================
 function listenUserRealtime(uid) {
+    console.log('[FIRESTORE] Listener realtime diaktifkan');
+
     firebaseDb.collection('users').doc(uid)
         .onSnapshot((doc) => {
             if (!doc.exists) return;
+
             userData = doc.data();
+            console.log('[REALTIME] Data profil diperbarui');
             updateProfileUI();
         });
 }
 
-// =======================
-// ACCESS CONTROL (ANTI LOOP)
-// =======================
-async function checkPageAccess() {
+// =====================================================
+// ACCESS CONTROL (ANTI LOOP TOTAL)
+// =====================================================
+async function safeCheckAccess() {
     const path = window.location.pathname.replace('.html', '');
-
-    if (!currentUser) return;
-
-    if (isLoginPage() && !hasRedirected) {
-        hasRedirected = true;
-        redirectBasedOnRole();
-        return;
-    }
-
     const allowed = rolePermissions[userRole] || [];
+
+    console.log('[ACCESS] Cek akses:', path, 'Role:', userRole);
+
     if (!allowed.includes(path)) {
-        showAccessDenied();
+        const base = getBasePath();
+        const target =
+            userRole === 'admin'
+                ? `${base}/admin/`
+                : `${base}/siswa/`;
+
+        console.warn('[ACCESS] Akses ditolak, redirect ke:', target);
+        location.replace(target);
+    } else {
+        console.log('[ACCESS] Akses diizinkan');
     }
 }
 
-// =======================
-// REDIRECT
-// =======================
-function redirectBasedOnRole() {
-    const base = getBasePath();
-    if (userRole === 'admin') location.href = `${base}/admin/`;
-    else location.href = `${base}/siswa/`;
-}
-
-function redirectToLogin() {
-    location.href = `${getBasePath()}/login.html`;
-}
-
-// =======================
+// =====================================================
 // AUTH
-// =======================
+// =====================================================
 async function authLogin() {
+    console.log('[AUTH] Memulai login Google');
     const provider = new firebase.auth.GoogleAuthProvider();
     await firebaseAuth.signInWithPopup(provider);
 }
 
 async function authLogout() {
+    console.log('[AUTH] Logout pengguna');
     await firebaseAuth.signOut();
-    redirectToLogin();
+    location.replace(`${getBasePath()}/login.html`);
 }
 
-// =======================
-// PROFILE UI (HTML VIA JS)
-// =======================
+// =====================================================
+// PROFILE UI (HTML DIBUAT OLEH JS)
+// =====================================================
 function injectProfileUI() {
-    if (document.getElementById('profileMorph')) return;
+    if (document.getElementById('profileMorph')) {
+        console.warn('[PROFILE] UI profil sudah ada');
+        return;
+    }
 
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = `${getBasePath()}/assets/css/profile.css`;
-    document.head.appendChild(link);
+    console.log('[PROFILE] Menyuntikkan UI profil');
 
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `
+    const container = document.createElement('div');
+    container.innerHTML = `
         <div id="profileMorph" class="morph-ui">
             <div class="toggle-icon">
-                <img id="profileAvatar" />
+                <img id="profileAvatar" alt="Avatar">
                 <span id="profileAlert">!</span>
             </div>
 
             <div class="content-layer">
                 <div class="anim-item">
-                    <img id="profileAvatarBig" class="avatar-lg"/>
+                    <img id="profileAvatarBig" class="avatar-lg">
                 </div>
 
                 <div class="anim-item">
                     <h3 id="profileName"></h3>
-                    <p class="hint-text">Profil siswa AlbEdu</p>
+                    <p class="hint-text">Profil Siswa AlbEdu</p>
                 </div>
 
                 <div class="anim-item">
-                    <button onclick="openAvatarPicker()">Ganti Foto</button>
+                    <button onclick="openAvatarPicker()">Ganti Foto Profil</button>
                 </div>
 
                 <div class="close-trigger" onclick="toggleProfile()">✕</div>
@@ -243,44 +242,52 @@ function injectProfileUI() {
         </div>
     `;
 
-    document.body.appendChild(wrapper);
+    document.body.appendChild(container);
     updateProfileUI();
 
-    document.getElementById('profileMorph')
+    document
+        .getElementById('profileMorph')
         .addEventListener('click', toggleProfile);
 }
 
-// =======================
-// PROFILE UI UPDATE
-// =======================
+// =====================================================
+// UPDATE PROFILE UI
+// =====================================================
 function updateProfileUI() {
     if (!userData) return;
 
-    document.getElementById('profileAvatar').src = userData.foto_profil;
-    document.getElementById('profileAvatarBig').src = userData.foto_profil;
-    document.getElementById('profileName').textContent = userData.nama;
+    const small = document.getElementById('profileAvatar');
+    const big = document.getElementById('profileAvatarBig');
+    const name = document.getElementById('profileName');
+    const alert = document.getElementById('profileAlert');
 
-    document.getElementById('profileAlert')
-        .style.display = userData.profilLengkap ? 'none' : 'flex';
+    if (!small) return;
+
+    small.src = userData.foto_profil;
+    big.src = userData.foto_profil;
+    name.textContent = userData.nama;
+
+    alert.style.display = userData.profilLengkap ? 'none' : 'flex';
 }
 
-// =======================
+// =====================================================
 // PROFILE INTERACTION
-// =======================
+// =====================================================
 function toggleProfile(e) {
     if (e) e.stopPropagation();
-    document.getElementById('profileMorph')
-        .classList.toggle('active');
+    document.getElementById('profileMorph').classList.toggle('active');
 }
 
-// =======================
-// AVATAR PICKER
-// =======================
+// =====================================================
+// AVATAR PICKER (10 + MUAT LEBIH BANYAK)
+// =====================================================
 function openAvatarPicker() {
+    console.log('[PROFILE] Membuka pemilih avatar');
+
     const picker = document.createElement('div');
     picker.className = 'avatar-picker';
 
-    defaultAvatars.slice(0, 10).forEach(url => {
+    avatarBawaan.slice(0, 10).forEach((url) => {
         const img = document.createElement('img');
         img.src = url;
         img.onclick = () => updateProfile(url);
@@ -288,9 +295,9 @@ function openAvatarPicker() {
     });
 
     const more = document.createElement('button');
-    more.textContent = 'Muat lebih banyak…';
+    more.textContent = 'Muat lebih banyak...';
     more.onclick = () => {
-        defaultAvatars.slice(10).forEach(url => {
+        avatarBawaan.slice(10).forEach((url) => {
             const img = document.createElement('img');
             img.src = url;
             img.onclick = () => updateProfile(url);
@@ -303,37 +310,29 @@ function openAvatarPicker() {
     document.body.appendChild(picker);
 }
 
-// =======================
-// UPDATE PROFILE
-// =======================
-function updateProfile(photo) {
+// =====================================================
+// UPDATE PROFILE DATA
+// =====================================================
+function updateProfile(photoUrl) {
+    console.log('[PROFILE] Memperbarui foto profil');
+
     firebaseDb.collection('users').doc(currentUser.uid).update({
-        foto_profil: photo,
+        foto_profil: photoUrl,
         profilLengkap: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 }
 
-// =======================
-// ERROR UI
-// =======================
-function showAccessDenied() {
-    redirectBasedOnRole();
-}
-
-function showError(msg) {
-    alert(msg);
-}
-
-// =======================
-// BOOT
-// =======================
+// =====================================================
+// BOOTSTRAP
+// =====================================================
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[SYSTEM] DOM siap, sistem dimulai');
     initializeSystem();
 });
 
-// =======================
+// =====================================================
 // EXPORT
-// =======================
+// =====================================================
 window.authLogin = authLogin;
 window.authLogout = authLogout;
