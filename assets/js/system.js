@@ -1,3 +1,5 @@
+// Safety Instructions and other headers are not part of the code, skipping to the actual JS.
+
 // ByteWard v0.1.4 - AlbEdu Security & Profile System
 // Advanced Security with Real-time Profile Management
 
@@ -54,6 +56,15 @@ const DEFAULT_AVATARS = [
         color: '#8b5cf6'  
     }  
 ];  
+
+const ROLE_WHITELIST = {
+    admin: [], // Admin akses semua, tidak pakai whitelist
+    siswa: [
+        '/login.html',
+        '/siswa/index.html',
+        '/ujian/index.html'
+    ]
+};
 
 // =======================  
 // Profile State  
@@ -391,7 +402,7 @@ function populateAvatarOptions() {
                      onerror="this.parentElement.innerHTML='<div class=\\'option-label\\'>${avatar.name}</div>'">  
             `;  
         } else {  
-            option.innerHTML = `<img src="${avatar.url}" alt="${avatar.name}">`;  
+            option.innerHTML = `<img src="\( {avatar.url}" alt=" \){avatar.name}">`;  
         }  
           
         // Check if this is current avatar  
@@ -870,7 +881,7 @@ async function authLogout() {
 // Access Control & Redirect  
 // =======================  
 async function checkPageAccess() {  
-    const currentPath = window.location.pathname;
+    const currentPath = window.location.pathname.toLowerCase(); // Normalkan case
     console.log(`🔒 Mengecek akses: ${currentPath} | Role: ${userRole}`);  
       
     if (!currentUser) {  
@@ -887,43 +898,27 @@ async function checkPageAccess() {
         return true;
     }  
       
-    const rolePermissions = {  
-        admin: [
-            '/', '/login', '/admin', '/admin/creates', '/admin/panel', '/ujian',
-            '/admin/dashboard', '/admin/manage', '/admin/settings'
-        ],  
-        siswa: [
-            '/', '/login', '/siswa', '/ujian', '/siswa/dashboard', 
-            '/siswa/ujian', '/siswa/profile', '/siswa/quiz'
-        ]  
-    };  
-      
-    const allowed = rolePermissions[userRole] || [];
+    // Untuk admin: Izinkan semua
+    if (userRole === 'admin') {
+        console.log('✅ Admin: Akses diizinkan untuk semua halaman');
+        return true;
+    }
     
-    // Normalize path for comparison
+    // Untuk siswa: Cek whitelist
+    const allowedPaths = ROLE_WHITELIST[userRole] || [];
     let normalizedPath = currentPath;
     const base = getBasePath();
-    
     if (base && normalizedPath.startsWith(base)) {
         normalizedPath = normalizedPath.substring(base.length);
     }
     
-    if (normalizedPath === '') normalizedPath = '/';
-    
-    // Check if current path is allowed
-    let isAllowed = false;
-    for (const allowedPath of allowed) {
-        if (normalizedPath === allowedPath || 
-            normalizedPath.startsWith(allowedPath + '/') ||
-            (allowedPath === '/' && normalizedPath === '/')) {
-            isAllowed = true;
-            break;
-        }
-    }
+    const isAllowed = allowedPaths.some(allowed => 
+        normalizedPath === allowed || normalizedPath.startsWith(allowed.replace('.html', ''))
+    );
     
     if (!isAllowed) {  
         console.warn('⛔ Akses ditolak untuk path:', normalizedPath);  
-        showAccessDenied();  
+        showAccessDenied(); // Hard block, bukan redirect
         return false;  
     }  
       
@@ -931,12 +926,12 @@ async function checkPageAccess() {
     return true;
 }  
 
-// =======================  
-// Redirect System  
-// =======================  
+// Smart Redirect berbasis Role (dengan anti-loop)
 function redirectBasedOnRole() {
-    // FIX: Prevent redirect loops
-    if (redirectInProgress) return;
+    if (redirectInProgress) {
+        console.log('⚠️ Redirect sedang berlangsung, skip untuk hindari loop');
+        return;
+    }
     
     if (!currentUser || !userRole) {
         console.log('⚠️ Menunggu data user...');
@@ -950,38 +945,49 @@ function redirectBasedOnRole() {
     let target = '';
     
     if (userRole === 'admin') {
-        target = `${base}/admin/dashboard.html`;
+        target = `${base}/admin/index.html`;
     } else if (userRole === 'siswa') {
-        target = `${base}/siswa/dashboard.html`;
+        target = `${base}/siswa/index.html`;
     } else {
         target = `${base}/login.html`;
     }
     
-    // Check if we're already on the target page
-    const currentPath = window.location.pathname;
-    if (currentPath === target || currentPath.includes(target.replace(base, ''))) {
-        console.log('✅ Sudah berada di halaman yang benar');
+    // Anti-loop: Cek jika target sama dengan current
+    const currentPath = window.location.pathname.toLowerCase();
+    const targetNormalized = target.toLowerCase();
+    if (currentPath === targetNormalized || currentPath.endsWith(targetNormalized.replace(base.toLowerCase(), ''))) {
+        console.log('✅ Sudah berada di halaman target, skip redirect');
         redirectInProgress = false;
         return;
     }
     
-    console.log(`🔄 Redirect ${userRole} ke: ${target}`);
+    console.log(`🔄 Smart redirect ${userRole} ke: ${target}`);
     
-    // Use replace instead of href to avoid adding to history
-    setTimeout(() => {
-        window.location.replace(target);
-    }, 800);
+    // Validasi path sebelum redirect
+    if (target && target !== currentPath) {
+        setTimeout(() => {
+            window.location.replace(target);
+            redirectInProgress = false; // Reset setelah redirect
+        }, 800);
+    } else {
+        redirectInProgress = false;
+    }
 }  
 
+// Redirect ke Login (dengan anti-loop)
 function redirectToLogin() {  
-    // FIX: Prevent redirect loops
-    if (redirectInProgress) return;
+    if (redirectInProgress) {
+        console.log('⚠️ Redirect sedang berlangsung, skip');
+        return;
+    }
     
     const base = getBasePath();
     const target = `${base}/login.html`;
     
-    // Check if already on login page
-    if (window.location.pathname.includes('login.html') || isLoginPage()) {
+    // Anti-loop: Cek jika sudah di login
+    const currentPath = window.location.pathname.toLowerCase();
+    if (currentPath.includes('login.html') || isLoginPage()) {
+        console.log('✅ Sudah di login, skip redirect');
         return;
     }
     
@@ -990,25 +996,52 @@ function redirectToLogin() {
     
     setTimeout(() => {
         window.location.replace(target);
+        redirectInProgress = false;
     }, 500);
 }  
 
+// Hard Block: Tampilkan HTML Error 405 (Access Denied)
 function showAccessDenied() {  
-    // FIX: Prevent redirect loops
-    if (redirectInProgress) return;
+    // Tidak redirect, ganti konten halaman langsung
+    console.log('🛑 Hard block: Menampilkan Error 405');
     
-    redirectInProgress = true;
-    const base = getBasePath();  
+    // Generate HTML error dinamis
+    document.body.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: #dc2626;
+            text-align: center;
+            padding: 20px;
+        ">
+            <h1 style="font-size: 48px; margin: 0;">405</h1>
+            <h2 style="font-size: 24px; margin: 10px 0;">Access Denied</h2>
+            <p style="font-size: 16px; max-width: 400px;">
+                Anda tidak memiliki izin untuk mengakses halaman ini. 
+                Silakan kembali ke dashboard atau hubungi administrator.
+            </p>
+            <a href="${getBasePath()}/siswa/index.html" style="
+                margin-top: 20px;
+                padding: 10px 20px;
+                background: #2563eb;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+            ">Kembali ke Dashboard</a>
+        </div>
+    `;
     
-    setTimeout(() => {
-        if (userRole === 'admin') {
-            window.location.href = `${base}/admin/dashboard.html`;
-        } else if (userRole === 'siswa') {
-            window.location.href = `${base}/siswa/dashboard.html`;
-        } else {
-            window.location.href = `${base}/login.html`;  
-        }
-    }, 1000);
+    // Hentikan semua script lain (opsional, untuk keamanan)
+    window.stop();
 }  
 
 // =======================  
@@ -1149,4 +1182,4 @@ window.checkPageAccess = checkPageAccess;
 window.showProfilePanel = showProfilePanel;  
 window.debugByteWard = debugByteWard;
 
-console.log('🛡️ ByteWard v0.1.4 AKTIF. Sistem keamanan dengan profil real-time telah diaktifkan.');  
+console.log('🛡️ ByteWard v0.1.4 AKTIF. Sistem keamanan dengan profil real-time telah diaktifkan.');
