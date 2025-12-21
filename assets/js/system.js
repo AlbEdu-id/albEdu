@@ -1,7 +1,8 @@
-// ByteWard v0.1.7 - Sistem Autentikasi Deterministik Stabil
+// ByteWard v0.1.7 RQB - Sistem Autentikasi Deterministik Stabil
 // Enhanced dengan Login-Only Redirect & Hard Block Protection
+// ROLE HIERARCHY: Admin = Superuser, Siswa = Strict
 
-console.log('🚀 Memuat ByteWard v0.1.7 - Sistem Navigasi Deterministik Stabil...');
+console.log('🚀 Memuat ByteWard v0.1.7 RQB - Sistem Navigasi Deterministik Stabil...');
 
 // =======================
 // Global State
@@ -71,10 +72,8 @@ let profileState = {
 // =======================
 function getBasePath() {
     const path = window.location.pathname;
-    // Jika ada folder /admin, /siswa, /ujian di root
     const segments = path.split('/').filter(segment => segment);
     
-    // Jika kita di dalam folder admin/siswa/ujian
     if (segments.length > 0 && ['admin', 'siswa', 'ujian'].includes(segments[0])) {
         return `/${segments[0]}`;
     }
@@ -136,7 +135,6 @@ function performLoginRedirect() {
         return;
     }
     
-    // Tampilkan loading message berdasarkan role
     const messages = {
         admin: 'Memindahkan Anda ke halaman admin…',
         siswa: 'Memindahkan Anda ke halaman siswa…'
@@ -145,7 +143,6 @@ function performLoginRedirect() {
     const message = messages[userRole] || 'Memindahkan Anda…';
     showAuthLoading(message);
     
-    // Single delay untuk UX
     setTimeout(() => {
         const targetPath = userRole === 'admin' ? '/admin/index.html' : '/siswa/index.html';
         const fullPath = getBasePath() + targetPath;
@@ -174,7 +171,6 @@ function handleLoginPageGuard() {
 // Role Resolution System
 // =======================
 function resolveUserRole(peranData) {
-    // Validasi dan sanitasi role
     const validRoles = ['admin', 'siswa'];
     
     if (!peranData || typeof peranData !== 'string') {
@@ -208,15 +204,12 @@ function checkProfileCompleteness(data) {
 // Profile Button System
 // =======================
 function createProfileButton() {
-    // Remove existing button if any
     const existing = document.querySelector('.profile-button-container');
     if (existing) existing.remove();
     
-    // Create container
     const container = document.createElement('div');
     container.className = 'profile-button-container';
     
-    // Create button
     const button = document.createElement('button');
     button.className = 'profile-button';
     button.id = 'profileTrigger';
@@ -227,7 +220,6 @@ function createProfileButton() {
              onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=6b7280'">
     `;
     
-    // Add indicator if profile incomplete
     if (!profileState.isProfileComplete) {
         const indicator = document.createElement('div');
         indicator.className = 'profile-indicator';
@@ -236,7 +228,6 @@ function createProfileButton() {
         button.appendChild(indicator);
     }
     
-    // Add click event
     button.addEventListener('click', showProfilePanel);
     
     container.appendChild(button);
@@ -252,7 +243,6 @@ function updateProfileButton() {
         img.src = userData.foto_profil;
     }
     
-    // Update indicator
     const indicator = button.querySelector('.profile-indicator');
     if (profileState.isProfileComplete) {
         if (indicator) indicator.remove();
@@ -271,16 +261,13 @@ function updateProfileButton() {
 // Profile Panel System
 // =======================
 function createProfilePanel() {
-    // Remove existing panel if any
     const existing = document.getElementById('profilePanel');
     if (existing) existing.remove();
     
-    // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'profile-overlay';
     overlay.id = 'profileOverlay';
     
-    // Create panel
     const panel = document.createElement('div');
     panel.className = 'profile-panel';
     panel.id = 'profilePanel';
@@ -358,36 +345,29 @@ function createProfilePanel() {
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
     
-    // Initialize panel components
     initializeProfilePanel();
 }
 
 function initializeProfilePanel() {
-    // Populate avatar options
     populateAvatarOptions();
     
-    // Setup event listeners
     document.getElementById('closeProfile').addEventListener('click', hideProfilePanel);
     document.getElementById('cancelEdit').addEventListener('click', hideProfilePanel);
     document.getElementById('profileOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'profileOverlay') hideProfilePanel();
     });
     
-    // Name input listener
     const nameInput = document.getElementById('profileName');
     nameInput.addEventListener('input', () => {
         profileState.tempName = nameInput.value.trim();
         checkForChanges();
     });
     
-    // Avatar upload listener
     const uploadInput = document.getElementById('avatarUpload');
     uploadInput.addEventListener('change', handleAvatarUpload);
     
-    // Save button listener
     document.getElementById('saveProfile').addEventListener('click', saveProfile);
     
-    // Initialize state
     profileState.tempName = userData?.nama || '';
     checkForChanges();
 }
@@ -414,7 +394,6 @@ function populateAvatarOptions() {
             option.innerHTML = `<img src="${avatar.url}" alt="${avatar.name}">`;
         }
         
-        // Check if this is current avatar
         if (userData?.foto_profil) {
             const currentUrl = userData.foto_profil;
             if (avatar.id === 'github' && currentUrl.includes('github.com/identicons/')) {
@@ -435,7 +414,6 @@ function selectAvatar(avatarId) {
     profileState.selectedAvatar = avatarId;
     profileState.customAvatar = null;
     
-    // Update UI
     document.querySelectorAll('.avatar-option').forEach(opt => {
         opt.classList.remove('selected');
         if (opt.dataset.id === avatarId) {
@@ -443,7 +421,6 @@ function selectAvatar(avatarId) {
         }
     });
     
-    // Clear preview
     const previewContainer = document.getElementById('previewContainer');
     const previewImage = document.getElementById('previewImage');
     previewContainer.classList.remove('active');
@@ -456,7 +433,6 @@ function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Validate file
     if (!file.type.startsWith('image/')) {
         showStatus('Hanya file gambar yang diperbolehkan', 'error');
         return;
@@ -473,7 +449,6 @@ function handleAvatarUpload(event) {
             profileState.customAvatar = e.target.result;
             profileState.selectedAvatar = 'custom';
             
-            // Update UI
             document.querySelectorAll('.avatar-option').forEach(opt => {
                 opt.classList.remove('selected');
             });
@@ -529,14 +504,12 @@ function showProfilePanel() {
         setTimeout(() => panel.classList.add('active'), 10);
     }
     
-    // Reset form
     const nameInput = document.getElementById('profileName');
     if (nameInput) {
         nameInput.value = userData?.nama || '';
         profileState.tempName = userData?.nama || '';
     }
     
-    // Clear status
     showStatus('', '');
     checkForChanges();
 }
@@ -549,7 +522,6 @@ function hideProfilePanel() {
     if (overlay) {
         setTimeout(() => {
             overlay.classList.remove('active');
-            // Reset upload
             const uploadInput = document.getElementById('avatarUpload');
             if (uploadInput) uploadInput.value = '';
         }, 300);
@@ -584,15 +556,12 @@ async function saveProfile() {
         profileState.isLoading = true;
         updateSaveButtonState();
         
-        // Prepare update data
         const updates = {};
         
-        // Update name if changed
         if (profileState.tempName && profileState.tempName !== userData?.nama) {
             updates.nama = profileState.tempName.trim();
         }
         
-        // Update avatar if changed
         let newAvatarUrl = userData?.foto_profil;
         
         if (profileState.selectedAvatar === 'custom' && profileState.customAvatar) {
@@ -608,7 +577,6 @@ async function saveProfile() {
             updates.foto_profil = newAvatarUrl;
         }
         
-        // Check if profile is now complete
         const willBeComplete = checkProfileCompleteness({
             ...userData,
             ...updates
@@ -617,19 +585,15 @@ async function saveProfile() {
         updates.profilLengkap = willBeComplete;
         updates.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
         
-        // Save to Firestore
         await firebaseDb.collection('users').doc(currentUser.uid).update(updates);
         
-        // Update local state
         userData = { ...userData, ...updates };
         profileState.isProfileComplete = willBeComplete;
         profileState.hasChanges = false;
         
-        // Update UI
         updateProfileButton();
         showStatus('Profil berhasil diperbarui!', 'success');
         
-        // Update panel display
         const currentAvatar = document.querySelector('.current-avatar');
         const currentName = document.querySelector('.current-name');
         
@@ -640,7 +604,6 @@ async function saveProfile() {
             currentName.textContent = updates.nama;
         }
         
-        // Auto close if profile is now complete and this was first time
         if (willBeComplete && !userData.profilLengkap) {
             setTimeout(() => {
                 hideProfilePanel();
@@ -678,7 +641,6 @@ function updateSaveButtonState() {
 // CSS Injection
 // =======================
 function injectByteWardCSS() {
-    // Inject loading CSS
     if (!document.querySelector('link[href*="byteward-loading.css"]')) {
         const loadingLink = document.createElement('link');
         loadingLink.rel = 'stylesheet';
@@ -687,7 +649,6 @@ function injectByteWardCSS() {
         document.head.appendChild(loadingLink);
     }
     
-    // Inject profile CSS
     if (!document.querySelector('link[href*="byteward-profile.css"]')) {
         const profileLink = document.createElement('link');
         profileLink.rel = 'stylesheet';
@@ -703,7 +664,6 @@ function injectByteWardCSS() {
 async function fetchUserData(userId) {
     console.log('📡 Mengambil data user dari Firestore...');
     
-    // Set up real-time listener
     if (profileListener) {
         profileListener();
     }
@@ -717,7 +677,6 @@ async function fetchUserData(userId) {
                     userData = snap.data();
                     userRole = resolveUserRole(userData.peran);
                     
-                    // Check profile completeness
                     profileState.isProfileComplete = checkProfileCompleteness(userData);
                     
                     console.log('✅ Data user diperbarui:', { 
@@ -728,11 +687,9 @@ async function fetchUserData(userId) {
                     
                     resolve(userData);
                     
-                    // Update UI if user is logged in
                     if (currentUser) {
                         updateProfileButton();
                         
-                        // Update panel if it's open
                         if (document.getElementById('profilePanel')) {
                             const currentAvatar = document.querySelector('.current-avatar');
                             const currentName = document.querySelector('.current-name');
@@ -809,7 +766,6 @@ async function authLogout() {
     try {
         showAuthLoading('Logout…');
         
-        // Cleanup
         if (profileListener) {
             profileListener();
             profileListener = null;
@@ -818,7 +774,6 @@ async function authLogout() {
         await firebaseAuth.signOut();
         console.log('✅ Logout berhasil');
         
-        // Remove profile UI
         const profileContainer = document.querySelector('.profile-button-container');
         if (profileContainer) profileContainer.remove();
         
@@ -833,78 +788,46 @@ async function authLogout() {
 }
 
 // =======================
-// Access Control & Routing - SESUAI STRUKTUR FOLDER
+// RQB ACCESS CONTROL SYSTEM
 // =======================
 const ROLE_PERMISSIONS = {
-    admin: [
-        '/admin',
-        '/admin/index.html',
-        '/admin/creates.html',
-        '/siswa',
-        '/siswa/index.html',
-        '/ujian',
-        '/ujian/index.html',
-        '/ujian/fix'
-    ],
     siswa: [
         '/siswa',
-        '/siswa/index.html',
-        '/ujian',
-        '/ujian/index.html'
+        '/ujian'
     ]
+    // ❌ Admin dihapus - menjadi superuser via logic
 };
 
-const COMMON_PAGES = ['/'];
-const LOGIN_PAGE = '/login.html';
+const LOGIN_PAGE = '/login';
 
 function getNormalizedPath() {
-    const currentPath = window.location.pathname;
-    const base = getBasePath();
-    
-    let normalized = currentPath;
-    if (base && normalized.startsWith(base)) {
-        normalized = normalized.substring(base.length);
-    }
-    
-    if (!normalized.startsWith('/')) normalized = '/' + normalized;
-    if (normalized.endsWith('/') && normalized.length > 1) {
-        normalized = normalized.slice(0, -1);
-    }
-    
-    // Handle index.html files
-    if (normalized.endsWith('.html')) {
-        normalized = normalized.replace('.html', '');
-    }
-    
-    return normalized || '/';
+    let path = window.location.pathname;
+
+    // Normalisasi path tanpa campur HTML
+    if (path.endsWith('/')) path = path.slice(0, -1);
+    if (path.endsWith('/index.html')) path = path.replace('/index.html', '');
+    if (path.endsWith('.html')) path = path.replace('.html', '');
+
+    return path || '/';
 }
 
 function isPathAllowed(path, role) {
-    // Halaman login & common pages diizinkan untuk semua
-    if (path === LOGIN_PAGE || path === '/' || path.includes('/login')) {
+    // Login & public pages - diizinkan untuk semua
+    if (path === '/' || path === '/login') {
         return true;
     }
-    
-    if (COMMON_PAGES.includes(path)) {
-        return true;
-    }
-    
-    // ⚡ PERUBAHAN UTAMA: Admin memiliki akses ke semua halaman
+
+    // ADMIN = SUPERUSER (full access)
     if (role === 'admin') {
         return true;
     }
-    
-    // ⚡ Siswa hanya bisa mengakses path yang ada di ROLE_PERMISSIONS.siswa
-    if (role === 'siswa') {
-        const allowedPaths = ROLE_PERMISSIONS.siswa || [];
-        for (const allowedPath of allowedPaths) {
-            if (path === allowedPath || path.startsWith(allowedPath + '/')) {
-                return true;
-            }
-        }
-    }
-    
-    return false;
+
+    // SISWA = STRICT (hanya path yang diizinkan)
+    const allowedPaths = ROLE_PERMISSIONS.siswa;
+
+    return allowedPaths.some(
+        p => path === p || path.startsWith(p + '/')
+    );
 }
 
 function showHardBlockPage() {
@@ -988,7 +911,8 @@ async function checkPageAccess() {
     console.log(`🔒 Mengecek akses: ${currentPath} | Role: ${userRole}`);
     
     if (!currentUser) {
-        if (currentPath === LOGIN_PAGE || currentPath === '/' || currentPath.includes('/login')) {
+        // Non-authenticated user hanya boleh akses login page
+        if (currentPath === LOGIN_PAGE || currentPath === '/') {
             console.log('✅ Akses diizinkan (non-authenticated)');
             return true;
         }
@@ -1008,10 +932,10 @@ async function checkPageAccess() {
 }
 
 // =======================
-// System Initialization v0.1.7
+// System Initialization v0.1.7 RQB
 // =======================
 async function initializeSystem() {
-    console.log('⚙️ Menginisialisasi ByteWard v0.1.7...');
+    console.log('⚙️ Menginisialisasi ByteWard v0.1.7 RQB...');
     console.log('📍 Base Path:', getBasePath());
     console.log('📍 Current Path:', window.location.pathname);
     console.log('📍 Normalized Path:', getNormalizedPath());
@@ -1029,22 +953,17 @@ async function initializeSystem() {
                 
                 showAuthLoading('Mengambil data pengguna…');
                 
-                // ⚡ URUTAN FLOW SESUAI REQUIREMENT:
-                // 1. fetchUserData() → resolve role
                 await fetchUserData(user.uid);
                 
-                // 2. checkPageAccess()
                 const accessGranted = await checkPageAccess();
                 if (!accessGranted) return;
                 
-                // 3. Jika di halaman login → handleLoginPageGuard()
                 if (isLoginPage()) {
                     if (handleLoginPageGuard()) {
-                        return; // Redirect initiated, stop execution
+                        return;
                     }
                 }
                 
-                // 4. Jika tidak redirect → render UI
                 createProfileButton();
                 authReady = true;
                 hideAuthLoading();
@@ -1057,7 +976,6 @@ async function initializeSystem() {
                 authReady = true;
                 hideAuthLoading();
                 
-                // Non-authenticated user: check access
                 await checkPageAccess();
             }
         } catch (err) {
@@ -1104,8 +1022,8 @@ function showError(message) {
 // Debug & Testing
 // =======================
 window.debugByteWard = function() {
-    console.log('=== ByteWard Debug Info v0.1.7 ===');
-    console.log('Version: 0.1.7');
+    console.log('=== ByteWard Debug Info v0.1.7 RQB ===');
+    console.log('Version: 0.1.7 RQB');
     console.log('Current User:', currentUser);
     console.log('User Role:', userRole);
     console.log('User Data:', userData);
@@ -1142,4 +1060,4 @@ window.checkPageAccess = checkPageAccess;
 window.showProfilePanel = showProfilePanel;
 window.debugByteWard = debugByteWard;
 
-console.log('🛡️ ByteWard v0.1.7 QB AKTIF. Sistem navigasi dengan ROLE HIERARCHY stabil.');
+console.log('🛡️ ByteWard v0.1.7 RQB AKTIF. Sistem dengan ROLE HIERARCHY: Admin = Superuser, Siswa = Strict');
