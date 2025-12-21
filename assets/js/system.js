@@ -79,7 +79,12 @@ function isLoginPage() {
     const path = window.location.pathname;          
     return path.includes('login') || path.endsWith('/') || path.endsWith('/login.html');        
 }          
-        
+
+function isInternalPage() {
+    const path = getNormalizedPath();
+    return path.startsWith('/admin') || path.startsWith('/siswa');
+}
+
 function generateGitHubAvatar(email) {          
     const hash = email.split('').reduce((acc, char) => {          
         return char.charCodeAt(0) + ((acc << 5) - acc);          
@@ -165,7 +170,12 @@ function checkProfileCompleteness(data) {
 function createProfileButton() {          
     // Remove existing button if any          
     const existing = document.querySelector('.profile-button-container');          
-    if (existing) existing.remove();          
+    if (existing) existing.remove();  
+    
+    // Jangan buat tombol di halaman login atau root
+    if (isLoginPage() || !isInternalPage()) {
+        return;
+    }
               
     // Create container          
     const container = document.createElement('div');          
@@ -836,7 +846,12 @@ const ROLE_PERMISSIONS = {
         '/admin/dashboard',
         '/admin/manage',
         '/admin/settings',
-        '/ujian'
+        '/ujian',
+        '/siswa',  // Admin boleh akses halaman siswa
+        '/siswa/dashboard',
+        '/siswa/ujian',
+        '/siswa/profile',
+        '/siswa/quiz'
     ],
     siswa: [
         '/siswa',
@@ -886,6 +901,11 @@ function isPathAllowed(path, role) {
     
     // Common pages accessible to all
     if (COMMON_PAGES.includes(path)) {
+        return true;
+    }
+    
+    // Admin bisa akses semua
+    if (role === 'admin') {
         return true;
     }
     
@@ -1136,4 +1156,4 @@ window.checkPageAccess = checkPageAccess;
 window.showProfilePanel = showProfilePanel;          
 window.debugByteWard = debugByteWard;        
         
-console.log('🛡️ ByteWard v0.1.4 AKTIF. Sistem keamanan dengan hard block routing.');          
+console.log('🛡️ ByteWard v0.1.4 AKTIF. Sistem keamanan dengan hard block routing.');  
