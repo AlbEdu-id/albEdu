@@ -12,9 +12,15 @@
     <link rel="stylesheet" href="../assets/css/style.css">
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- 🔥 PERBAIKAN: ByteWard modules dengan path relatif -->
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/byteward.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/ui.js"></script>
 </head>
 <body>
     <div class="development-container">
@@ -25,15 +31,24 @@
                 <h2>AlbEdu-Creates</h2>
                 <p>Halaman ini sedang dalam pengembangan 🤖</p>
                 <p>Sistem pembuatan konten edukasi.</p>
+                <p id="userInfo" style="margin-top: 10px; font-size: 14px; color: #666;"></p>
             </div>
             
             <div style="margin-top: 30px;">
                 <a href="index.html" class="back-button">Kembali ke Panel Admin</a>
+                <button onclick="window.Auth?.authLogout?.()" class="back-button" style="margin-left: 10px;">Logout</button>
             </div>
         </div>
     </div>
     
-    <script src="../assets/js/firebase-config.js"></script>
-    <script src="../assets/js/system.js"></script>
+    <script>
+        // Tampilkan info user jika tersedia
+        document.addEventListener('DOMContentLoaded', function() {
+            const userInfo = document.getElementById('userInfo');
+            if (window.Auth?.currentUser) {
+                userInfo.innerHTML = `Login sebagai: <strong>${window.Auth.currentUser.email}</strong> (Role: ${window.Auth.userRole || 'unknown'})`;
+            }
+        });
+    </script>
 </body>
 </html>
