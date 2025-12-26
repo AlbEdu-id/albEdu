@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>AlbEdu-Creates - AlbEdu</title>
-    <meta name="description" content="AlbEdu-Creates - Sistem Pembuatan Konten">
+    <title>Buat Konten - AlbEdu</title>
+    <meta name="description" content="AlbEdu - Sistem Pembuatan Konten">
     <meta name="theme-color" content="#2563eb">
     
     <link rel="icon" href="../assets/images/favicon.ico" type="image/x-icon">
@@ -16,11 +16,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
-    <!-- 🔥 PERBAIKAN: ByteWard modules dengan path relatif -->
-    <script src="../js/firebase-config.js"></script>
-    <script src="../js/byteward.js"></script>
-    <script src="../js/auth.js"></script>
-    <script src="../js/ui.js"></script>
+    <!-- ByteWard Modules -->
+    <script src="../assets/js/firebase.config.js"></script>
+    <script src="../assets/js/byteward.js"></script>
+    <script src="../assets/js/ui.js"></script>
+    <script src="../assets/js/auth.js"></script>
 </head>
 <body>
     <div class="development-container">
@@ -37,6 +37,16 @@
             <div style="margin-top: 30px;">
                 <a href="index.html" class="back-button">Kembali ke Panel Admin</a>
                 <button onclick="window.Auth?.authLogout?.()" class="back-button" style="margin-left: 10px;">Logout</button>
+            </div>
+            
+            <div class="create-options" style="margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <h3 style="margin-bottom: 15px;">Pilihan Pembuatan Konten:</h3>
+                <ul style="text-align: left; list-style-type: none; padding: 0;">
+                    <li style="padding: 10px; border-bottom: 1px solid #e2e8f0;">📝 Buat Ujian Baru</li>
+                    <li style="padding: 10px; border-bottom: 1px solid #e2e8f0;">📚 Buat Materi Pembelajaran</li>
+                    <li style="padding: 10px; border-bottom: 1px solid #e2e8f0;">👥 Kelola Pengguna</li>
+                    <li style="padding: 10px;">📊 Buat Laporan</li>
+                </ul>
             </div>
         </div>
     </div>
