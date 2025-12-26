@@ -164,6 +164,15 @@
             }
         }
     </style>
+    
+    <!-- 🔥 PERBAIKAN: Tambahkan ByteWard modules -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/byteward.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
 </head>
 <body>
     <div class="error-container">
@@ -191,8 +200,8 @@
             <a href="/AlbEdu/login.html" class="btn btn-primary">
                 <i class="fas fa-sign-in-alt"></i> Ke Halaman Login
             </a>
-            <a href="/AlbEdu/siswa/index.html" class="btn btn-secondary">
-                <i class="fas fa-home"></i> Ke Dashboard Siswa
+            <a href="/AlbEdu/ujian/index.html" class="btn btn-secondary">
+                <i class="fas fa-file-alt"></i> Ke Halaman Ujian
             </a>
             <a href="javascript:history.back()" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Kembali
@@ -217,14 +226,12 @@
             requestedPath.textContent = window.location.pathname;
             baseUrl.textContent = window.location.origin + '/AlbEdu';
             
-            // Available pages for search
+            // Available pages for search (diperbarui)
             const availablePages = [
                 { name: 'Login', path: '/AlbEdu/login.html', icon: 'sign-in-alt' },
-                { name: 'Dashboard Siswa', path: '/AlbEdu/siswa/index.html', icon: 'user-graduate' },
-                { name: 'Dashboard Admin', path: '/AlbEdu/admin/index.html', icon: 'user-tie' },
+                { name: 'Panel Admin', path: '/AlbEdu/admin/index.html', icon: 'user-tie' },
                 { name: 'Ujian Online', path: '/AlbEdu/ujian/index.html', icon: 'file-alt' },
-                { name: 'Profil', path: '/AlbEdu/siswa/profile.html', icon: 'id-card' },
-                { name: 'Nilai', path: '/AlbEdu/siswa/grades.html', icon: 'chart-bar' }
+                { name: 'AlbEdu-Creates', path: '/AlbEdu/admin/creates.html', icon: 'tools' }
             ];
             
             // Search functionality
