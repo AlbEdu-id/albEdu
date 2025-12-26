@@ -1,4 +1,4 @@
-onsole.log('🔐 Auth Module v0.1.5 - Authentication siap.');
+console.log('🔐 Auth Module v0.1.5 - Authentication siap.');
 // ByteWard Auth Module v0.1.5 - Authentication & User Data
 
 console.log('🔐 Memuat Auth Module v0.1.5...');
