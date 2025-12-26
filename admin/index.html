@@ -12,9 +12,15 @@
     <link rel="stylesheet" href="../assets/css/style.css">
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- ByteWard Modules -->
+    <script src="../assets/js/firebase.config.js"></script>
+    <script src="../assets/js/byteward.js"></script>
+    <script src="../assets/js/ui.js"></script>
+    <script src="../assets/js/auth.js"></script>
 </head>
 <body>
     <div class="development-container">
@@ -25,15 +31,92 @@
                 <h2>Panel Administrator</h2>
                 <p>Halaman ini sedang dalam pengembangan 🤖</p>
                 <p>Anda login sebagai <strong>Administrator</strong> AlbEdu.</p>
+                <p id="userInfo" style="margin-top: 10px; font-size: 14px; color: #666;"></p>
             </div>
             
-            <div style="margin-top: 30px;">
-                <button onclick="authLogout()" class="back-button">Logout</button>
+            <div class="admin-actions" style="margin-top: 30px;">
+                <a href="create.html" class="action-button">Buat Konten Baru</a>
+                <button onclick="window.Auth?.authLogout?.()" class="action-button logout-btn">Logout</button>
+            </div>
+            
+            <div class="admin-links" style="margin-top: 20px;">
+                <p>Halaman yang tersedia:</p>
+                <ul style="text-align: left; display: inline-block; margin-top: 10px;">
+                    <li><a href="create.html" style="color: #2563eb;">create.html</a> - Pembuatan konten</li>
+                    <li><a href="../ujian/index.html" style="color: #2563eb;">../ujian/index.html</a> - Sistem ujian</li>
+                    <li><a href="../index.html" style="color: #2563eb;">../index.html</a> - Landing page</li>
+                </ul>
             </div>
         </div>
     </div>
     
-    <script src="../assets/js/firebase-config.js"></script>
-    <script src="../assets/js/system.js"></script>
+    <script>
+        // Tampilkan info user jika tersedia
+        document.addEventListener('DOMContentLoaded', function() {
+            const userInfo = document.getElementById('userInfo');
+            if (window.Auth?.currentUser) {
+                userInfo.innerHTML = `Login sebagai: <strong>${window.Auth.currentUser.email}</strong> (UID: ${window.Auth.currentUser.uid})`;
+            }
+            
+            // Debug info
+            console.log('Admin Panel Loaded');
+            console.log('ByteWard:', typeof ByteWard !== 'undefined' ? '✅ Loaded' : '❌ Missing');
+            console.log('Auth:', typeof Auth !== 'undefined' ? '✅ Loaded' : '❌ Missing');
+            console.log('UI:', typeof UI !== 'undefined' ? '✅ Loaded' : '❌ Missing');
+        });
+    </script>
+    
+    <style>
+        .action-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .action-button:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .logout-btn {
+            background-color: #dc2626;
+        }
+        
+        .logout-btn:hover {
+            background-color: #b91c1c;
+        }
+        
+        .admin-links {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .admin-links ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .admin-links li {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .admin-links li:last-child {
+            border-bottom: none;
+        }
+    </style>
 </body>
 </html>
