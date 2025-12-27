@@ -16,7 +16,7 @@ const APP_CONFIG = {
     // Role-based redirects with base path included    
     REDIRECT_PATHS: {    
         admin: '/admin/index.html',    
-        siswa: '/siswa/index.html',    
+        siswa: '/ujian/index.html',    
         login: '/login.html',    
         logout: '/login.html'    
     },    
