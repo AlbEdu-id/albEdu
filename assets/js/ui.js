@@ -15,12 +15,7 @@ function createProfileButton() {
   const button = document.createElement('button');
   button.className = 'profile-button';
   button.id = 'profileTrigger';
-  button.innerHTML = `
-    <img src="${window.Auth?.userData?.foto_profil || (window.Auth?.currentUser ? generateGitHubAvatar(window.Auth.currentUser.email) : '')}" 
-         alt="Profile" 
-         class="profile-image"
-         onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=6b7280'">
-  `;
+  button.innerHTML = `<img src="${window.Auth?.userData?.foto_profil || (window.Auth?.currentUser ? generateGitHubAvatar(window.Auth.currentUser.email) : '')}" alt="Profile" class="profile-image" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=6b7280'">`;
 
   if (window.Auth?.profileState && !window.Auth.profileState.isProfileComplete) {
     const indicator = document.createElement('div');
@@ -73,75 +68,7 @@ function createProfilePanel() {
   panel.className = 'profile-panel';
   panel.id = 'profilePanel';
 
-  panel.innerHTML = `
-    <div class="profile-header">
-      <h2>${window.Auth?.profileState?.isProfileComplete ? 'Profil Saya' : 'Lengkapi Profil'}</h2>
-      <button class="close-profile" id="closeProfile">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-        
-    <div class="profile-content">
-      <div class="current-profile">
-        <img src="${window.Auth?.userData?.foto_profil || (window.Auth?.currentUser ? generateGitHubAvatar(window.Auth.currentUser.email) : '')}" 
-             alt="Current Avatar" 
-             class="current-avatar"
-             onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=6b7280'">
-        <div class="current-name">${window.Auth?.userData?.nama || window.Auth?.currentUser?.displayName || 'Nama belum diisi'}</div>
-      </div>
-          
-      <div class="edit-section">
-        <div class="name-input-group">
-          <label for="profileName">Nama Lengkap</label>
-          <input type="text" 
-                 id="profileName" 
-                 class="name-input" 
-                 placeholder="Masukkan nama lengkap"
-                 value="${window.Auth?.userData?.nama || ''}">
-        </div>
-            
-        <div class="avatar-options">
-          <div class="option-title">Pilih Avatar</div>
-          <div class="option-grid" id="avatarOptions"></div>
-                
-          <div class="custom-upload">
-            <label class="upload-label">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              Unggah Foto Sendiri
-              <input type="file" 
-                     id="avatarUpload" 
-                     class="upload-input" 
-                     accept="image/*">
-            </label>
-                    
-            <div class="preview-container" id="previewContainer">
-              <div class="preview-title">Pratinjau:</div>
-              <img class="preview-image" id="previewImage">
-            </div>
-          </div>
-        </div>
-            
-        <div class="status-message" id="statusMessage"></div>
-            
-        <div class="profile-actions">
-          <button class="save-btn" id="saveProfile" disabled>
-            <span id="saveText">Simpan Perubahan</span>
-            <span class="save-loading" id="saveLoading">
-              <span class="spinner"></span>
-              Menyimpan...
-            </span>
-          </button>
-          <button class="cancel-btn" id="cancelEdit">Batal</button>
-        </div>
-      </div>
-    </div>
-  `;
+  panel.innerHTML = `<div class="profile-header"><h2>${window.Auth?.profileState?.isProfileComplete ? 'Profil Saya' : 'Lengkapi Profil'}</h2><button class="close-profile" id="closeProfile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="profile-content"><div class="current-profile"><img src="${window.Auth?.userData?.foto_profil || (window.Auth?.currentUser ? generateGitHubAvatar(window.Auth.currentUser.email) : '')}" alt="Current Avatar" class="current-avatar" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=6b7280'"><div class="current-name">${window.Auth?.userData?.nama || window.Auth?.currentUser?.displayName || 'Nama belum diisi'}</div></div><div class="edit-section"><div class="name-input-group"><label for="profileName">Nama Lengkap</label><input type="text" id="profileName" class="name-input" placeholder="Masukkan nama lengkap" value="${window.Auth?.userData?.nama || ''}"></div><div class="avatar-options"><div class="option-title">Pilih Avatar</div><div class="option-grid" id="avatarOptions"></div><div class="custom-upload"><label class="upload-label"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Unggah Foto Sendiri<input type="file" id="avatarUpload" class="upload-input" accept="image/*"></label><div class="preview-container" id="previewContainer"><div class="preview-title">Pratinjau:</div><img class="preview-image" id="previewImage"></div></div></div><div class="status-message" id="statusMessage"></div><div class="profile-actions"><button class="save-btn" id="saveProfile" disabled><span id="saveText">Simpan Perubahan</span><span class="save-loading" id="saveLoading"><span class="spinner"></span>Menyimpan...</span></button><button class="cancel-btn" id="cancelEdit">Batal</button></div></div></div>`;
 
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
@@ -510,75 +437,7 @@ function injectProfileCSS() {
 
 function injectFallbackCSS() {
   const style = document.createElement('style');
-  style.textContent = `
-    .profile-button-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-    }
-    .profile-button {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: #333;
-      border: none;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      padding: 0;
-    }
-    .profile-button img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .profile-indicator {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      width: 20px;
-      height: 20px;
-      background: #ef4444;
-      border-radius: 50%;
-      color: white;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-    }
-    .profile-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-    }
-    .profile-overlay.active {
-      display: flex;
-    }
-    .profile-panel {
-      background: white;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 90vh;
-      overflow-y: auto;
-      transform: translateY(20px);
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-    .profile-panel.active {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  `;
+  style.textContent = `.profile-button-container{position:fixed;top:20px;right:20px;z-index:9999;}.profile-button{width:56px;height:56px;border-radius:50%;background:#333;border:none;cursor:pointer;position:relative;overflow:hidden;padding:0;}.profile-button img{width:100%;height:100%;object-fit:cover;}.profile-indicator{position:absolute;top:-5px;right:-5px;width:20px;height:20px;background:#ef4444;border-radius:50%;color:white;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:bold;}.profile-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;z-index:10000;}.profile-overlay.active{display:flex;}.profile-panel{background:white;border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;transform:translateY(20px);opacity:0;transition:all 0.3s ease;}.profile-panel.active{transform:translateY(0);opacity:1;}`;
   document.head.appendChild(style);
 }
 
@@ -590,42 +449,12 @@ function showAuthLoading(text = 'Memverifikasi sesi login…') {
   if (!el) {
     el = document.createElement('div');
     el.id = 'loadingIndicator';
-    el.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      color: white;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 18px;
-      flex-direction: column;
-    `;
-    el.innerHTML = `
-      <div class="spinner" style="
-        width: 50px;
-        height: 50px;
-        border: 5px solid rgba(255,255,255,0.3);
-        border-radius: 50%;
-        border-top-color: #fff;
-        animation: spin 1s ease-in-out infinite;
-        margin-bottom: 20px;
-      "></div>
-      <p>${text}</p>
-    `;
+    el.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:10000;color:white;font-family:system-ui,-apple-system,sans-serif;font-size:18px;flex-direction:column;';
+    el.innerHTML = `<div class="spinner" style="width:50px;height:50px;border:5px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:#fff;animation:spin 1s ease-in-out infinite;margin-bottom:20px;"></div><p>${text}</p>`;
     document.body.appendChild(el);
 
     const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    `;
+    style.textContent = '@keyframes spin{to{transform:rotate(360deg);}}';
     document.head.appendChild(style);
   }
 
@@ -651,20 +480,7 @@ function showError(message) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'systemError';
-    el.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #fee2e2;
-      color: #dc2626;
-      padding: 15px 20px;
-      border-radius: 8px;
-      border-left: 4px solid #dc2626;
-      z-index: 10000;
-      max-width: 420px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      font-family: system-ui, -apple-system, sans-serif;
-    `;
+    el.style.cssText = 'position:fixed;top:20px;right:20px;background:#fee2e2;color:#dc2626;padding:15px 20px;border-radius:8px;border-left:4px solid #dc2626;z-index:10000;max-width:420px;box-shadow:0 4px 12px rgba(0,0,0,0.1);font-family:system-ui,-apple-system,sans-serif;';
     document.body.appendChild(el);
   }
 
@@ -677,10 +493,14 @@ function showError(message) {
 // Helper function untuk generateGitHubAvatar
 function generateGitHubAvatar(email) {
   if (!email) return 'https://api.dicebear.com/7.x/avataaars/svg?seed=user&backgroundColor=6b7280';
+  
+  // Gunakan DiceBear sebagai fallback karena GitHub identicons sering diblokir
   const hash = email.split('').reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
-  return `https://github.com/identicons/${Math.abs(hash)}.png`;
+  
+  // Fallback ke DiceBear yang lebih reliable
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.abs(hash)}&backgroundColor=6b7280`;
 }
 
 // =======================
@@ -709,4 +529,3 @@ window.UI = {
 };
 
 console.log('🎨 UI Module v0.1.5 - UI & UX siap.');
-
