@@ -957,11 +957,12 @@ function hideProfilePanel() {
 function showStatus(message, type) {
     const statusEl = document.getElementById('statusMessage');
     if (!statusEl) return;
-
+    
     statusEl.textContent = message;
     statusEl.className = 'status-message';
     statusEl.style.display = 'block';
-
+    
+    // Atur warna pesan di dalam panel
     if (type === 'success') {
         statusEl.style.cssText += `
             background: #d1fae5;
@@ -981,23 +982,17 @@ function showStatus(message, type) {
             border: 1px solid #bfdbfe;
         `;
     }
-
-    // Auto-hide success messages
+    
+    // Auto-hide success messages HANYA untuk teks di dalam panel
     if (type === 'success') {
         setTimeout(() => {
             statusEl.style.display = 'none';
         }, 3000);
     }
-
-    // Also show notification
-    if (message && (type === 'success' || type === 'error')) {
-        if (window.notify) {
-            window.notify[type === 'success' ? 'success' : 'error'](
-                type === 'success' ? 'Success' : 'Error',
-                message
-            );
-        }
-    }
+    
+    // SAYA SENGAJA MENGHAPUS BAGIAN INI:
+    // Bagian "window.notify" dihapus agar tidak muncul 2 notifikasi.
+    // Notifikasi global sudah dihandle oleh fungsi saveProfile.
 }
 
 async function saveProfile() {
@@ -2237,3 +2232,4 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 console.log(`🎨 UI Module v${UI_CONFIG.version} - Compatible with notification.js`);
+
