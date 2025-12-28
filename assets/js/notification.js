@@ -1,85 +1,74 @@
 /**
- * HyperOS Notification System
- * Modern, responsive notification system with mobile/desktop modes
- * Compatible with original HyperOS styling
+ * Notification System v3.0
+ * Modern, responsive notification system
+ * EXACT SAME as the original HTML example
  */
 
-class HyperOSNotification {
+class NotificationSystem {
     constructor() {
         this.container = null;
         this.notifications = new Map();
-        this.maxDesktopNotifications = 8;
-        this.maxMobileNotifications = 3;
-        this.autoIncrementId = 0;
+        this.maxDesktop = 8;
+        this.maxMobile = 3;
+        this.autoId = 0;
         
-        // Default configurations - SAME AS ORIGINAL HTML
+        // Default configurations - SAME AS ORIGINAL
         this.config = {
-            sukses: {
+            success: {
                 icon: "check_circle",
                 title: "Berhasil",
-                msg: "Data berhasil sinkron",
-                color: "#34c759"
+                msg: "Data berhasil sinkron"
             },
-            gagal: {
+            error: {
                 icon: "error",
                 title: "Gagal",
-                msg: "Terjadi kesalahan sistem",
-                color: "#ff3b30"
+                msg: "Terjadi kesalahan sistem"
             },
-            peringatan: {
+            warning: {
                 icon: "warning",
                 title: "Peringatan",
-                msg: "Baterai mulai lemah",
-                color: "#ff9500"
+                msg: "Baterai mulai lemah"
             },
-            informasi: {
+            info: {
                 icon: "info",
                 title: "Info",
-                msg: "Pembaruan tersedia",
-                color: "#007aff"
+                msg: "Pembaruan tersedia"
             }
         };
         
         this.init();
     }
     
-    /**
-     * Initialize the notification system
-     */
     init() {
         // Create container if not exists
-        if (!document.getElementById('hyperos-notification-container')) {
+        if (!document.getElementById('notification-container')) {
             this.container = document.createElement('div');
-            this.container.id = 'hyperos-notification-container';
-            this.container.className = 'hyperos-notification-container';
+            this.container.id = 'notification-container';
+            this.container.className = 'notification-container';
+            
+            // Add to body
             document.body.appendChild(this.container);
             
-            // Load Material Icons and Inter font
+            // Load fonts
             this.loadFonts();
             
             // Set initial mode
             this.updateMode();
             
-            // Listen for resize events
+            // Listen for resize
             window.addEventListener('resize', () => this.updateMode());
             
-            console.log('🔔 HyperOS Notification System Initialized');
-        } else {
-            this.container = document.getElementById('hyperos-notification-container');
+            console.log('🔔 Notification System Initialized');
         }
     }
     
-    /**
-     * Load required fonts
-     */
     loadFonts() {
         // Material Icons
         if (!document.querySelector('link[href*="material-icons"]')) {
-            const materialLink = document.createElement('link');
-            materialLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons+Round';
-            materialLink.rel = 'stylesheet';
-            materialLink.crossOrigin = 'anonymous';
-            document.head.appendChild(materialLink);
+            const link = document.createElement('link');
+            link.href = 'https://fonts.googleapis.com/icon?family=Material+Icons+Round';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
         }
         
         // Inter font
@@ -87,40 +76,28 @@ class HyperOSNotification {
             const interLink = document.createElement('link');
             interLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
             interLink.rel = 'stylesheet';
-            interLink.crossOrigin = 'anonymous';
             document.head.appendChild(interLink);
         }
     }
     
-    /**
-     * Update container mode (mobile/desktop) based on screen width
-     */
     updateMode() {
-        const isDesktop = window.innerWidth > 768;
-        const currentMode = this.container.classList.contains('desktop-mode') ? 'desktop' : 'mobile';
-        const newMode = isDesktop ? 'desktop-mode' : 'mobile-mode';
+        if (!this.container) return;
         
-        if ((isDesktop && currentMode !== 'desktop') || (!isDesktop && currentMode !== 'mobile')) {
-            this.container.className = `hyperos-notification-container ${newMode}`;
-            
-            // Update all active notifications
-            this.notifications.forEach((notification) => {
-                if (!notification.isDead) {
-                    notification.isDesktop = isDesktop;
-                    this.updateNotificationUI(notification);
-                }
-            });
-        }
+        const isDesktop = window.innerWidth > 768;
+        this.container.className = `notification-container ${isDesktop ? 'desktop-mode' : 'mobile-mode'}`;
+        
+        // Update all notifications
+        this.notifications.forEach(notification => {
+            if (!notification.isDead) {
+                notification.isDesktop = isDesktop;
+                this.updateUI(notification);
+            }
+        });
     }
     
-    /**
-     * Show a notification
-     * @param {Object} options - Notification options
-     * @returns {string} Notification ID
-     */
     show(options) {
         const {
-            type = 'informasi',
+            type = 'info',
             title = null,
             message = null,
             duration = 4000,
@@ -128,55 +105,54 @@ class HyperOSNotification {
             dismissible = true
         } = options;
         
-        // Type mapping for compatibility
+        // Type mapping for bahasa Indonesia
         const typeMap = {
-            'success': 'sukses',
-            'error': 'gagal',
-            'warning': 'peringatan',
-            'info': 'informasi'
+            'sukses': 'success',
+            'gagal': 'error',
+            'peringatan': 'warning',
+            'informasi': 'info'
         };
         
         const finalType = typeMap[type] || type;
         
-        // Use default config if title/message not provided
-        const config = this.config[finalType] || this.config.informasi;
+        // Get config
+        const config = this.config[finalType] || this.config.info;
         const finalTitle = title || config.title;
         const finalMessage = message || config.msg;
         const finalIcon = icon || config.icon;
-        const finalColor = config.color;
         
-        const id = `hyperos-notif-${Date.now()}-${this.autoIncrementId++}`;
+        const id = `notification-${Date.now()}-${this.autoId++}`;
         const isDesktop = window.innerWidth > 768;
         
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.id = id;
-        notification.className = `hyperos-notification ${finalType} spawn`;
+        // Create element - SAME STRUCTURE AS ORIGINAL HTML
+        const element = document.createElement('div');
+        element.id = id;
+        element.className = `notification-item ${finalType} spawn`;
         
-        // Prepare classes for desktop animation
-        const iconClass = isDesktop ? 'hyperos-stagger' : '';
-        const textSmallClass = isDesktop ? 'hyperos-stagger' : '';
-        const textMainClass = isDesktop ? 'hyperos-stagger' : '';
+        // Prepare stagger classes
+        const iconClass = isDesktop ? 'stagger' : '';
+        const textSmallClass = isDesktop ? 'stagger' : '';
+        const textMainClass = isDesktop ? 'stagger' : '';
         
-        // Build notification HTML - SAME STRUCTURE AS ORIGINAL
-        notification.innerHTML = `
-            <div class="hyperos-notification-icon ${iconClass}">
-                <div class="hyperos-icon-blob">
+        // SAME HTML STRUCTURE AS ORIGINAL
+        element.innerHTML = `
+            <div class="notification-icon ${iconClass}">
+                <div class="icon-blob">
                     <span class="material-icons-round">${finalIcon}</span>
                 </div>
             </div>
-            <div class="hyperos-notification-text">
-                <div class="hyperos-text-small ${textSmallClass}">${finalTitle}</div>
-                <div class="hyperos-text-main ${textMainClass}">${finalMessage}</div>
+            <div class="notification-text">
+                <div class="text-small ${textSmallClass}">${finalTitle}</div>
+                <div class="text-main ${textMainClass}">${finalMessage}</div>
             </div>
-            <div class="hyperos-progress-track">
-                <div class="hyperos-progress-bar" id="hyperos-pb-${id}"></div>
+            <div class="progress-track">
+                <div class="progress-bar" id="progress-${id}"></div>
             </div>
         `;
         
-        const notificationData = {
+        const notification = {
             id,
-            element: notification,
+            element,
             isDead: false,
             duration,
             isDesktop,
@@ -187,92 +163,86 @@ class HyperOSNotification {
             pausedProgress: null
         };
         
-        // Store notification
-        this.notifications.set(id, notificationData);
+        // Store
+        this.notifications.set(id, notification);
         
         // Add to container
-        this.container.appendChild(notification);
+        this.container.appendChild(element);
         
-        // Animate in with exact timing as original
+        // Animate in - SAME TIMING AS ORIGINAL
         requestAnimationFrame(() => {
             setTimeout(() => {
                 this.refreshUI();
                 
                 // Start progress bar
-                const progressBar = notification.querySelector(`#hyperos-pb-${id}`);
+                const progressBar = element.querySelector(`#progress-${id}`);
                 if (progressBar && duration > 0) {
                     progressBar.style.transition = `transform ${duration}ms linear`;
                     progressBar.style.transform = isDesktop ? "scaleY(1)" : "scaleX(1)";
                     
-                    // Trigger animation
                     requestAnimationFrame(() => {
                         progressBar.style.transform = isDesktop ? "scaleY(0)" : "scaleX(0)";
                     });
                 }
-            }, 40);
+            }, 40); // SAME DELAY
         });
         
-        // Set auto-dismiss timer if duration > 0
+        // Auto dismiss
         if (duration > 0) {
-            notificationData.timer = setTimeout(() => this.dismiss(id), duration);
+            notification.timer = setTimeout(() => this.dismiss(id), duration);
         }
         
-        // Desktop hover interactions
+        // Desktop hover
         if (isDesktop && dismissible) {
-            notification.addEventListener('mouseenter', () => this.pauseDismiss(id));
-            notification.addEventListener('mouseleave', () => this.resumeDismiss(id));
+            element.addEventListener('mouseenter', () => this.pause(id));
+            element.addEventListener('mouseleave', () => this.resume(id));
         } else if (!isDesktop && dismissible) {
-            // Mobile swipe to dismiss
-            this.bindSwipe(notificationData);
+            // Mobile swipe
+            this.bindSwipe(notification);
         }
         
-        // Limit number of notifications
-        this.cleanupExcessNotifications(isDesktop);
+        // Limit notifications
+        this.cleanup(isDesktop);
         
         return id;
     }
     
-    /**
-     * Update notification UI based on position in stack
-     */
     refreshUI() {
-        const isDesktop = this.container.classList.contains('desktop-mode');
-        const aliveNotifications = Array.from(this.notifications.values())
-            .filter(item => !item.isDead)
-            .sort((a, b) => b.createdAt - a.createdAt); // Newest first
+        if (!this.container) return;
         
-        aliveNotifications.forEach((notification, index) => {
+        const isDesktop = this.container.classList.contains('desktop-mode');
+        const alive = Array.from(this.notifications.values())
+            .filter(n => !n.isDead)
+            .sort((a, b) => b.createdAt - a.createdAt);
+        
+        alive.forEach((notification, index) => {
             const element = notification.element;
             
-            // Remove all state classes
+            // Remove classes
             element.classList.remove('spawn', 'active', 'layer-1', 'layer-2');
             
             if (isDesktop) {
-                // Stack vertically for desktop
+                // Desktop stacking
                 const yOffset = index * -(145 + 12);
                 element.style.setProperty('--y-offset', `${yOffset}px`);
                 element.classList.add('active');
             } else {
-                // Mobile: Only show top 3 notifications
+                // Mobile stacking
                 const delay = Math.min(index * 0.05, 0.3);
                 element.style.transitionDelay = `${delay}s`;
                 
                 if (index === 0) element.classList.add('active');
                 else if (index === 1) element.classList.add('layer-1');
                 else if (index === 2) element.classList.add('layer-2');
-                else element.classList.add('layer-2'); // Others also layer-2
             }
         });
     }
     
-    /**
-     * Update individual notification UI after mode change
-     */
-    updateNotificationUI(notification) {
+    updateUI(notification) {
         const element = notification.element;
         
-        // Update progress bar orientation
-        const progressBar = element.querySelector('.hyperos-progress-bar');
+        // Update progress orientation
+        const progressBar = element.querySelector('.progress-bar');
         if (progressBar && !notification.isDead) {
             const currentTransform = progressBar.style.transform;
             const currentScale = currentTransform ? 
@@ -285,9 +255,6 @@ class HyperOSNotification {
         this.refreshUI();
     }
     
-    /**
-     * Dismiss a notification
-     */
     dismiss(id) {
         const notification = this.notifications.get(id);
         if (!notification || notification.isDead) return;
@@ -299,30 +266,24 @@ class HyperOSNotification {
         element.classList.add('exit');
         element.classList.remove('active', 'layer-1', 'layer-2');
         
-        // Remove event listeners
-        element.replaceWith(element.cloneNode(true));
-        
         this.refreshUI();
         
-        // Remove from DOM after animation
+        // Remove after animation
         setTimeout(() => {
             if (element.parentNode) {
                 element.parentNode.removeChild(element);
             }
             this.notifications.delete(id);
-        }, 800);
+        }, 800); // SAME TIMING
     }
     
-    /**
-     * Pause auto-dismiss on hover (desktop only)
-     */
-    pauseDismiss(id) {
+    pause(id) {
         const notification = this.notifications.get(id);
         if (!notification || !notification.isDesktop || notification.isDead || notification.duration <= 0) return;
         
         clearTimeout(notification.timer);
         
-        const progressBar = notification.element.querySelector('.hyperos-progress-bar');
+        const progressBar = notification.element.querySelector('.progress-bar');
         if (progressBar) {
             const currentTransform = progressBar.style.transform;
             const currentScale = currentTransform ? 
@@ -333,18 +294,15 @@ class HyperOSNotification {
         }
     }
     
-    /**
-     * Resume auto-dismiss after hover (desktop only)
-     */
-    resumeDismiss(id) {
+    resume(id) {
         const notification = this.notifications.get(id);
         if (!notification || !notification.isDesktop || notification.isDead || notification.duration <= 0) return;
         
         setTimeout(() => {
             if (notification.isDead) return;
             
-            const progressBar = notification.element.querySelector('.hyperos-progress-bar');
-            if (progressBar && notification.pausedProgress !== undefined && notification.pausedProgress !== null) {
+            const progressBar = notification.element.querySelector('.progress-bar');
+            if (progressBar && notification.pausedProgress !== null) {
                 const remaining = Math.max(1000, notification.duration * notification.pausedProgress);
                 
                 progressBar.style.transition = `transform ${remaining}ms linear`;
@@ -353,352 +311,156 @@ class HyperOSNotification {
                 notification.timer = setTimeout(() => this.dismiss(id), remaining);
                 notification.pausedProgress = null;
             }
-        }, 500);
+        }, 500); // SAME DELAY
     }
     
-    /**
-     * Bind swipe gesture for mobile dismiss
-     */
     bindSwipe(notification) {
         let startY = 0;
-        let isSwiping = false;
         const element = notification.element;
-        const threshold = 40;
         
         element.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
-            isSwiping = true;
-        }, { passive: true });
-        
-        element.addEventListener('touchmove', (e) => {
-            if (!isSwiping) return;
-            
-            const currentY = e.touches[0].clientY;
-            const diff = startY - currentY;
-            
-            if (diff > 0) {
-                const opacity = 1 - (diff / 100);
-                const translateY = Math.min(diff, 50);
-                
-                element.style.opacity = opacity;
-                element.style.transform = `translate(-50%, ${25 - translateY}px)`;
-            }
         }, { passive: true });
         
         element.addEventListener('touchend', (e) => {
-            if (!isSwiping) return;
-            
-            isSwiping = false;
             const endY = e.changedTouches[0].clientY;
-            const diff = startY - endY;
-            
-            if (diff > threshold) {
+            if (startY - endY > 40) { // SAME THRESHOLD
                 this.dismiss(notification.id);
-            } else {
-                element.style.opacity = '';
-                element.style.transform = '';
             }
         }, { passive: true });
     }
     
-    /**
-     * Remove excess notifications
-     */
-    cleanupExcessNotifications(isDesktop) {
-        const maxNotifications = isDesktop ? this.maxDesktopNotifications : this.maxMobileNotifications;
-        const activeNotifications = Array.from(this.notifications.values())
-            .filter(item => !item.isDead && item.isDesktop === isDesktop)
-            .sort((a, b) => a.createdAt - b.createdAt); // Oldest first
+    cleanup(isDesktop) {
+        const max = isDesktop ? this.maxDesktop : this.maxMobile;
+        const active = Array.from(this.notifications.values())
+            .filter(n => !n.isDead && n.isDesktop === isDesktop)
+            .sort((a, b) => a.createdAt - b.createdAt);
         
-        if (activeNotifications.length > maxNotifications) {
-            const notificationsToRemove = activeNotifications.slice(0, activeNotifications.length - maxNotifications);
-            notificationsToRemove.forEach(item => this.dismiss(item.id));
+        if (active.length > max) {
+            const toRemove = active.slice(0, active.length - max);
+            toRemove.forEach(n => this.dismiss(n.id));
         }
     }
     
-    /**
-     * Clear all notifications
-     */
     clearAll() {
         Array.from(this.notifications.keys()).forEach(id => {
             this.dismiss(id);
         });
     }
     
-    /**
-     * Quick method to show success notification
-     */
+    // Quick methods
     success(title, message, duration = 4000) {
         return this.show({
-            type: 'sukses',
+            type: 'success',
             title,
             message,
             duration
         });
     }
     
-    /**
-     * Quick method to show error notification
-     */
     error(title, message, duration = 5000) {
         return this.show({
-            type: 'gagal',
+            type: 'error',
             title,
             message,
             duration
         });
     }
     
-    /**
-     * Quick method to show warning notification
-     */
     warning(title, message, duration = 4000) {
         return this.show({
-            type: 'peringatan',
+            type: 'warning',
             title,
             message,
             duration
         });
     }
     
-    /**
-     * Quick method to show info notification
-     */
     info(title, message, duration = 3000) {
         return this.show({
-            type: 'informasi',
+            type: 'info',
             title,
             message,
             duration
         });
     }
     
-    /**
-     * Show persistent notification (no auto-dismiss)
-     */
-    persistent(type, title, message, icon = null) {
-        return this.show({
-            type,
-            title,
-            message,
-            duration: 0,
-            icon
-        });
+    // Indonesian aliases
+    sukses(title, message, duration = 4000) {
+        return this.success(title, message, duration);
     }
     
-    /**
-     * Update existing notification
-     */
-    update(id, options) {
-        const notification = this.notifications.get(id);
-        if (!notification || notification.isDead) return;
-        
-        const { title, message, type, icon } = options;
-        const element = notification.element;
-        
-        if (title) {
-            const titleEl = element.querySelector('.hyperos-text-small');
-            if (titleEl) titleEl.textContent = title;
-        }
-        
-        if (message) {
-            const messageEl = element.querySelector('.hyperos-text-main');
-            if (messageEl) messageEl.textContent = message;
-        }
-        
-        if (type && (this.config[type] || type === 'sukses' || type === 'gagal' || type === 'peringatan' || type === 'informasi')) {
-            // Remove old type classes
-            element.classList.remove('sukses', 'gagal', 'peringatan', 'informasi');
-            element.classList.add(type);
-            
-            if (!icon) {
-                const iconEl = element.querySelector('.material-icons-round');
-                if (iconEl) iconEl.textContent = this.config[type]?.icon || 'info';
-            }
-        }
-        
-        if (icon) {
-            const iconEl = element.querySelector('.material-icons-round');
-            if (iconEl) iconEl.textContent = icon;
-        }
+    gagal(title, message, duration = 5000) {
+        return this.error(title, message, duration);
     }
     
-    /**
-     * Update default configuration
-     */
+    peringatan(title, message, duration = 4000) {
+        return this.warning(title, message, duration);
+    }
+    
+    informasi(title, message, duration = 3000) {
+        return this.info(title, message, duration);
+    }
+    
+    // Config methods
     setConfig(type, config) {
-        if (this.config[type]) {
-            this.config[type] = { ...this.config[type], ...config };
-        }
+        this.config[type] = { ...this.config[type], ...config };
     }
     
-    /**
-     * Add custom notification type
-     */
     addType(type, config) {
         this.config[type] = config;
     }
     
-    /**
-     * Get notification count
-     */
     getCount() {
-        return Array.from(this.notifications.values()).filter(item => !item.isDead).length;
-    }
-    
-    /**
-     * Check if notification system is ready
-     */
-    isReady() {
-        return this.container !== null;
+        return Array.from(this.notifications.values()).filter(n => !n.isDead).length;
     }
 }
 
-// Initialize and setup global access
-let HyperOSNotifications;
+// Initialize
+let Notifications;
 
-// Wait for DOM to be ready
+// Wait for DOM
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        HyperOSNotifications = new HyperOSNotification();
-        setupGlobalAccess();
+        Notifications = new NotificationSystem();
+        setupGlobal();
     });
 } else {
-    HyperOSNotifications = new HyperOSNotification();
-    setupGlobalAccess();
+    Notifications = new NotificationSystem();
+    setupGlobal();
 }
 
-function setupGlobalAccess() {
-    // Export for module usage
+function setupGlobal() {
+    // Export
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = HyperOSNotifications;
+        module.exports = Notifications;
     }
     
-    // Attach to window for global access
-    window.HyperOS = window.HyperOS || {};
-    window.HyperOS.Notifications = HyperOSNotifications;
+    // Global access
+    window.Notifications = Notifications;
     
-    // Quick access methods with error handling
+    // Quick access with error handling
     window.notify = {
-        // Quick methods
-        success: (title, message, duration) => {
-            try {
-                return HyperOSNotifications.success(title, message, duration);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return null;
-            }
-        },
-        error: (title, message, duration) => {
-            try {
-                return HyperOSNotifications.error(title, message, duration);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return null;
-            }
-        },
-        warning: (title, message, duration) => {
-            try {
-                return HyperOSNotifications.warning(title, message, duration);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return null;
-            }
-        },
-        info: (title, message, duration) => {
-            try {
-                return HyperOSNotifications.info(title, message, duration);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return null;
-            }
-        },
+        // English methods
+        success: (t, m, d) => Notifications.success(t, m, d),
+        error: (t, m, d) => Notifications.error(t, m, d),
+        warning: (t, m, d) => Notifications.warning(t, m, d),
+        info: (t, m, d) => Notifications.info(t, m, d),
         
-        // Persistent notifications
-        persistent: (type, title, message, icon) => {
-            try {
-                return HyperOSNotifications.persistent(type, title, message, icon);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return null;
-            }
-        },
+        // Indonesian methods
+        sukses: (t, m, d) => Notifications.sukses(t, m, d),
+        gagal: (t, m, d) => Notifications.gagal(t, m, d),
+        peringatan: (t, m, d) => Notifications.peringatan(t, m, d),
+        informasi: (t, m, d) => Notifications.informasi(t, m, d),
         
-        // Advanced methods
-        show: (options) => {
-            try {
-                return HyperOSNotifications.show(options);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return null;
-            }
-        },
-        update: (id, options) => {
-            try {
-                return HyperOSNotifications.update(id, options);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return false;
-            }
-        },
-        dismiss: (id) => {
-            try {
-                return HyperOSNotifications.dismiss(id);
-            } catch (error) {
-                console.error('Notification error:', error);
-                return false;
-            }
-        },
-        clearAll: () => {
-            try {
-                return HyperOSNotifications.clearAll();
-            } catch (error) {
-                console.error('Notification error:', error);
-                return false;
-            }
-        },
-        
-        // Info methods
-        getCount: () => HyperOSNotifications.getCount(),
-        isReady: () => HyperOSNotifications.isReady(),
-        
-        // Configuration methods
-        setConfig: (type, config) => HyperOSNotifications.setConfig(type, config),
-        addType: (type, config) => HyperOSNotifications.addType(type, config)
+        // Advanced
+        show: (o) => Notifications.show(o),
+        dismiss: (id) => Notifications.dismiss(id),
+        clearAll: () => Notifications.clearAll(),
+        getCount: () => Notifications.getCount(),
+        setConfig: (t, c) => Notifications.setConfig(t, c),
+        addType: (t, c) => Notifications.addType(t, c)
     };
     
-    console.log('🔔 HyperOS Notification System Ready');
-    console.log('📱 Available methods: notify.success(), notify.error(), notify.warning(), notify.info()');
-    console.log('⚙️  Advanced: notify.show(options), notify.dismiss(id), notify.clearAll()');
+    console.log('🔔 Notification System Ready');
 }
-
-// Auto-demo on page load (optional, can be removed)
-if (window.location.href.includes('demo=true')) {
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            notify.success("Sistem Siap", "Notifikasi berhasil dimuat");
-        }, 1000);
-    });
-}
-
-// Support for CommonJS, AMD, and browser globals
-if (typeof define === 'function' && define.amd) {
-    define([], function() {
-        return HyperOSNotifications;
-    });
-}
-
-// Error boundary for initialization
-window.addEventListener('error', function(e) {
-    if (e.message.includes('HyperOS') || e.message.includes('notify')) {
-        console.warn('HyperOS Notification System encountered an error, attempting recovery...');
-        
-        // Try to reinitialize
-        setTimeout(() => {
-            if (!window.HyperOS?.Notifications?.isReady?.()) {
-                HyperOSNotifications = new HyperOSNotification();
-                setupGlobalAccess();
-            }
-        }, 1000);
-    }
-});
