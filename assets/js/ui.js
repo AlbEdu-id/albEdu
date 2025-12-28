@@ -1,173 +1,512 @@
-// ByteWard UI Module v0.2.0 - Enhanced UI & Notification System dengan DiceBear
-console.log('🎨 Memuat UI Module v0.2.0...');
+// ByteWard UI Module v1.0.0 - Comprehensive UI System dengan HyperOS Integration
+console.log('🎨 Memuat UI Module v1.0.0...');
 
 // =======================
 // Configuration
 // =======================
 const UI_CONFIG = {
-    version: '0.2.0',
-    features: {
+    version: '1.0.0',
+    features: { 
         profileSystem: true,
         notificationSystem: true,
         loadingSystem: true,
-        errorSystem: true
+        errorSystem: true,
+        modalSystem: true,
+        toastSystem: true
     },
     defaults: {
-        maxNotifications: 5,
-        autoCloseDuration: 5000
+        maxNotifications: 8,
+        autoCloseDuration: 5000,
+        animationSpeed: 300,
+        theme: 'light'
     }
 };
 
 // =======================
-// Notification System
+// Notification System - HyperOS Integration dengan Fallback
 // =======================
-class NotificationManager {
+class EnhancedNotificationManager {
     constructor() {
         this.container = null;
         this.notifications = new Map();
         this.counter = 0;
         this.maxStack = UI_CONFIG.defaults.maxNotifications;
+        this.hyperOSAvailable = false;
         this.init();
     }
 
     init() {
+        console.log('🔔 Enhanced Notification System Initializing...');
+        
+        // Check HyperOS availability
+        this.hyperOSAvailable = !!(window.HyperOS && window.HyperOS.Notifications);
+        
+        if (this.hyperOSAvailable) {
+            console.log('✅ HyperOS Notification System terdeteksi, menggunakan mode integrated');
+        } else {
+            console.log('⚠️ HyperOS tidak tersedia, menggunakan built-in notification system');
+            this.setupBuiltInSystem();
+        }
+        
+        // Setup event listeners
+        this.setupEventListeners();
+    }
+
+    setupBuiltInSystem() {
+        // Create notification container
         if (!document.getElementById('notification-container')) {
             this.container = document.createElement('div');
             this.container.id = 'notification-container';
             this.container.className = 'notification-container';
             document.body.appendChild(this.container);
+            this.injectNotificationCSS();
         } else {
             this.container = document.getElementById('notification-container');
         }
-
-        this.injectNotificationCSS();
-        this.setupEventListeners();
-        console.log('🔔 Notification System Initialized');
     }
 
     injectNotificationCSS() {
         if (document.querySelector('#notification-css')) return;
 
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/assets/css/notification.css';
-        link.id = 'notification-css';
-
-        link.onerror = function() {
-            console.warn('Notification CSS failed to load, injecting fallback');
-            this.injectNotificationFallbackCSS();
-        }.bind(this);
-
-        link.onload = function() { 
-            console.log('✅ Notification CSS loaded'); 
-        };
-        document.head.appendChild(link);
-    }
-
-    injectNotificationFallbackCSS() {
         const style = document.createElement('style');
-        style.id = 'notification-fallback-css';
-        style.textContent = '.notification-container{position:fixed;top:20px;right:20px;z-index:100000;display:flex;flex-direction:column;align-items:flex-end;pointer-events:none;width:380px;}.notification{background:white;border-radius:12px;padding:16px;margin:8px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);pointer-events:auto;max-width:380px;animation:slideIn 0.3s ease;}@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}';
+        style.id = 'notification-css';
+        style.textContent = `
+            /* Notification System Styles */
+            .notification-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 100000;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                pointer-events: none;
+                width: 380px;
+                transition: all 0.3s ease;
+            }
+            
+            .notification {
+                background: #ffffff;
+                border-radius: 16px;
+                padding: 20px;
+                margin: 10px 0;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 
+                            0 2px 10px rgba(0, 0, 0, 0.05);
+                pointer-events: auto;
+                max-width: 380px;
+                width: 100%;
+                border-left: 5px solid #3b82f6;
+                transform: translateX(120%);
+                opacity: 0;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                position: relative;
+                overflow: hidden;
+                backdrop-filter: blur(10px);
+                background: rgba(255, 255, 255, 0.95);
+            }
+            
+            .notification.success {
+                border-left-color: #10b981;
+                background: rgba(16, 185, 129, 0.05);
+            }
+            
+            .notification.error {
+                border-left-color: #ef4444;
+                background: rgba(239, 68, 68, 0.05);
+            }
+            
+            .notification.warning {
+                border-left-color: #f59e0b;
+                background: rgba(245, 158, 11, 0.05);
+            }
+            
+            .notification.info {
+                border-left-color: #3b82f6;
+                background: rgba(59, 130, 246, 0.05);
+            }
+            
+            .notification.active {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            
+            .notification.exiting {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            
+            .notification-content {
+                display: flex;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .notification-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                font-weight: bold;
+                flex-shrink: 0;
+            }
+            
+            .notification.success .notification-icon {
+                background: #10b981;
+                color: white;
+            }
+            
+            .notification.error .notification-icon {
+                background: #ef4444;
+                color: white;
+            }
+            
+            .notification.warning .notification-icon {
+                background: #f59e0b;
+                color: white;
+            }
+            
+            .notification.info .notification-icon {
+                background: #3b82f6;
+                color: white;
+            }
+            
+            .notification-text {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .notification-title {
+                font-weight: 600;
+                font-size: 16px;
+                color: #1f2937;
+                margin-bottom: 5px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            }
+            
+            .notification-message {
+                font-size: 14px;
+                color: #6b7280;
+                line-height: 1.5;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            }
+            
+            .notification-close {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: transparent;
+                border: none;
+                color: #9ca3af;
+                font-size: 20px;
+                cursor: pointer;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                padding: 0;
+                line-height: 1;
+            }
+            
+            .notification-close:hover {
+                background: rgba(0, 0, 0, 0.05);
+                color: #374151;
+            }
+            
+            .notification-progress {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 0 0 16px 16px;
+                overflow: hidden;
+            }
+            
+            .notification-progress-bar {
+                height: 100%;
+                background: #3b82f6;
+                border-radius: 0 0 0 16px;
+                transform-origin: left center;
+            }
+            
+            .notification.success .notification-progress-bar {
+                background: #10b981;
+            }
+            
+            .notification.error .notification-progress-bar {
+                background: #ef4444;
+            }
+            
+            .notification.warning .notification-progress-bar {
+                background: #f59e0b;
+            }
+            
+            .notification.info .notification-progress-bar {
+                background: #3b82f6;
+            }
+            
+            /* Mobile Styles */
+            @media (max-width: 768px) {
+                .notification-container {
+                    top: auto;
+                    bottom: 80px;
+                    left: 0;
+                    right: 0;
+                    width: 100%;
+                    align-items: center;
+                    padding: 0 15px;
+                }
+                
+                .notification {
+                    max-width: 100%;
+                    width: calc(100% - 30px);
+                    margin: 8px 0;
+                }
+                
+                .notification.active {
+                    transform: translateY(0);
+                }
+                
+                .notification.exiting {
+                    transform: translateY(100%);
+                }
+            }
+            
+            /* Stacking */
+            .notification.stacked {
+                transform: scale(0.95) translateX(120%);
+                opacity: 0.7;
+                margin-top: -50px;
+            }
+            
+            .notification.stacked.active {
+                transform: scale(0.95) translateX(0);
+            }
+            
+            /* Animation */
+            @keyframes progressShrink {
+                from { transform: scaleX(1); }
+                to { transform: scaleX(0); }
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(120%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(120%);
+                    opacity: 0;
+                }
+            }
+        `;
         document.head.appendChild(style);
     }
 
     setupEventListeners() {
-        window.addEventListener('resize', function() { this.updatePosition(); }.bind(this));
-        window.addEventListener('orientationchange', function() {
-            setTimeout(function() { this.updatePosition(); }.bind(this), 100);
-        }.bind(this));
-        setTimeout(function() { this.updatePosition(); }.bind(this), 100);
+        window.addEventListener('resize', () => this.updatePosition());
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.updatePosition(), 100);
+        });
+        
+        setTimeout(() => this.updatePosition(), 100);
     }
 
     updatePosition() {
-        if (!this.container) return;
-          
-        var isMobile = window.innerWidth <= 767;
+        if (!this.container || this.hyperOSAvailable) return;
+        
+        const isMobile = window.innerWidth <= 768;
         if (isMobile) {
-            this.container.style.cssText = 'position: fixed; bottom: 80px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 100000; pointer-events: none;';
+            this.container.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                left: 0;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                z-index: 100000;
+                pointer-events: none;
+                padding: 0 15px;
+            `;
         } else {
-            this.container.style.cssText = 'position: fixed; top: 20px; right: 20px; width: 380px; display: flex; flex-direction: column; align-items: flex-end; z-index: 100000; pointer-events: none;';
+            this.container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 380px;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                z-index: 100000;
+                pointer-events: none;
+            `;
         }
     }
 
     show(options) {
-        var title = options.title || 'Notification';
-        var message = options.message || '';
-        var type = options.type || 'info';
-        var duration = options.duration || UI_CONFIG.defaults.autoCloseDuration;
-        var icon = options.icon || null;
-        var closeable = options.closeable !== false;
+        const {
+            type = 'info',
+            title = 'Notification',
+            message = '',
+            duration = UI_CONFIG.defaults.autoCloseDuration,
+            icon = null,
+            closeable = true,
+            action = null
+        } = options;
 
-        var id = 'notification-' + Date.now() + '-' + this.counter++;
-        var notification = document.createElement('div');
-        notification.id = id;
-        notification.className = 'notification notification-' + type + ' notification-enter';
-          
-        var iconContent = icon || this.getIconByType(type);
-        var typeTitle = this.getTypeTitle(type);
-          
-        notification.innerHTML = '<div class="notification-content">' +
-            '<div class="notification-icon">' + iconContent + '</div>' +
-            '<div class="notification-text">' +
-                '<div class="notification-title">' + typeTitle + ': ' + title + '</div>' +
-                (message ? '<div class="notification-message">' + message + '</div>' : '') +
-            '</div>' +
-            '</div>' +
-            (closeable ? '<button class="notification-close">&times;</button>' : '') +
-            '<div class="notification-progress">' +
-                '<div class="notification-progress-bar" style="animation: progressShrink ' + duration + 'ms linear forwards;"></div>' +
-            '</div>';
-
-        if (closeable) {
-            notification.querySelector('.notification-close').addEventListener('click', function() {
-                this.remove(id);
-            }.bind(this));
+        // Use HyperOS if available
+        if (this.hyperOSAvailable) {
+            return window.HyperOS.Notifications.show({
+                type: type,
+                title: title,
+                message: message,
+                duration: duration,
+                icon: icon || this.getDefaultIcon(type)
+            });
         }
 
-        notification.addEventListener('click', function(e) {
-            if (!e.target.closest('.notification-close')) {
+        // Built-in notification system
+        return this.showBuiltInNotification({
+            type, title, message, duration, icon, closeable, action
+        });
+    }
+
+    showBuiltInNotification(options) {
+        const id = `notification-${Date.now()}-${this.counter++}`;
+        
+        const notification = document.createElement('div');
+        notification.id = id;
+        notification.className = `notification ${options.type}`;
+        
+        const iconContent = options.icon || this.getDefaultIcon(options.type);
+        const typeTitle = this.getTypeTitle(options.type);
+        
+        notification.innerHTML = `
+            <div class="notification-content">
+                <div class="notification-icon">${iconContent}</div>
+                <div class="notification-text">
+                    <div class="notification-title">${typeTitle}: ${options.title}</div>
+                    ${options.message ? `<div class="notification-message">${options.message}</div>` : ''}
+                </div>
+            </div>
+            ${options.closeable ? '<button class="notification-close">&times;</button>' : ''}
+            <div class="notification-progress">
+                <div class="notification-progress-bar" style="animation: progressShrink ${options.duration}ms linear forwards;"></div>
+            </div>
+        `;
+
+        // Add action button if provided
+        if (options.action) {
+            const actionBtn = document.createElement('button');
+            actionBtn.className = 'notification-action';
+            actionBtn.textContent = options.action.label || 'Action';
+            actionBtn.style.cssText = `
+                margin-top: 10px;
+                padding: 6px 12px;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+                cursor: pointer;
+            `;
+            actionBtn.addEventListener('click', () => {
+                if (options.action.callback) options.action.callback();
+                this.remove(id);
+            });
+            notification.querySelector('.notification-text').appendChild(actionBtn);
+        }
+
+        // Event listeners
+        if (options.closeable) {
+            notification.querySelector('.notification-close').addEventListener('click', () => {
+                this.remove(id);
+            });
+        }
+
+        notification.addEventListener('click', (e) => {
+            if (!e.target.closest('.notification-close') && !e.target.closest('.notification-action')) {
                 this.remove(id);
             }
-        }.bind(this));
+        });
 
-        this.notifications.set(id, {
+        // Store notification data
+        const notificationData = {
             element: notification,
-            timeout: setTimeout(function() {
-                this.remove(id);
-            }.bind(this), duration)
-        });
+            timeout: setTimeout(() => this.remove(id), options.duration),
+            type: options.type
+        };
 
-        this.container.appendChild(notification);
+        this.notifications.set(id, notificationData);
+
+        // Add to container
+        if (this.container) {
+            this.container.appendChild(notification);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                notification.classList.add('active');
+            });
+        }
+
+        // Update stack
         this.updateStack();
-
-        requestAnimationFrame(function() {
-            notification.classList.remove('notification-enter');
-        });
 
         return id;
     }
 
-    getIconByType(type) {
-        var icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
+    getDefaultIcon(type) {
+        const icons = {
+            success: '✓',
+            error: '✗',
+            warning: '⚠',
+            info: 'ℹ'
+        };
         return icons[type] || '🔔';
     }
 
     getTypeTitle(type) {
-        var titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Info' };
+        const titles = {
+            success: 'Success',
+            error: 'Error',
+            warning: 'Warning',
+            info: 'Info'
+        };
         return titles[type] || 'Notification';
     }
 
     updateStack() {
-        var notifications = Array.from(this.container.children);
-          
+        if (!this.container || this.hyperOSAvailable) return;
+
+        const notifications = Array.from(this.container.children);
+        
         if (notifications.length > this.maxStack) {
-            var toRemove = notifications.slice(this.maxStack);
-            toRemove.forEach(function(notification) {
+            const toRemove = notifications.slice(this.maxStack);
+            toRemove.forEach(notification => {
                 this.remove(notification.id);
-            }.bind(this));
+            });
         }
 
-        notifications.forEach(function(notification, index) {
+        notifications.forEach((notification, index) => {
             if (index > 0) {
                 notification.classList.add('stacked');
                 if (index >= 3) notification.style.zIndex = 100000 - index;
@@ -179,64 +518,87 @@ class NotificationManager {
     }
 
     remove(id) {
-        var data = this.notifications.get(id);
+        // If using HyperOS
+        if (this.hyperOSAvailable && window.HyperOS.Notifications.dismiss) {
+            window.HyperOS.Notifications.dismiss(id);
+            return;
+        }
+
+        // Built-in system
+        const data = this.notifications.get(id);
         if (!data) return;
 
-        var element = data.element;
-        var timeout = data.timeout;
+        const { element, timeout } = data;
         if (timeout) clearTimeout(timeout);
 
-        element.classList.add('notification-exit');
-        setTimeout(function() {
+        element.classList.remove('active');
+        element.classList.add('exiting');
+
+        setTimeout(() => {
             if (element.parentNode) element.parentNode.removeChild(element);
             this.notifications.delete(id);
             this.updateStack();
-        }.bind(this), 400);
+        }, 400);
     }
 
     clearAll() {
-        Array.from(this.notifications.keys()).forEach(function(id) {
+        if (this.hyperOSAvailable && window.HyperOS.Notifications.clearAll) {
+            window.HyperOS.Notifications.clearAll();
+            return;
+        }
+
+        Array.from(this.notifications.keys()).forEach(id => {
             this.remove(id);
-        }.bind(this));
-    }
-
-    success(title, message, duration) {
-        return this.show({ 
-            title: title, 
-            message: message, 
-            type: 'success', 
-            duration: duration || 4000, 
-            icon: '✓' 
         });
     }
 
-    error(title, message, duration) {
-        return this.show({ 
-            title: title, 
-            message: message, 
-            type: 'error', 
-            duration: duration || 5000, 
-            icon: '✗' 
+    success(title, message, duration = 4000) {
+        return this.show({
+            type: 'success',
+            title,
+            message,
+            duration,
+            icon: '✓'
         });
     }
 
-    warning(title, message, duration) {
-        return this.show({ 
-            title: title, 
-            message: message, 
-            type: 'warning', 
-            duration: duration || 4000, 
-            icon: '⚠' 
+    error(title, message, duration = 5000) {
+        return this.show({
+            type: 'error',
+            title,
+            message,
+            duration,
+            icon: '✗'
         });
     }
 
-    info(title, message, duration) {
-        return this.show({ 
-            title: title, 
-            message: message, 
-            type: 'info', 
-            duration: duration || 3000, 
-            icon: 'ℹ' 
+    warning(title, message, duration = 4000) {
+        return this.show({
+            type: 'warning',
+            title,
+            message,
+            duration,
+            icon: '⚠'
+        });
+    }
+
+    info(title, message, duration = 3000) {
+        return this.show({
+            type: 'info',
+            title,
+            message,
+            duration,
+            icon: 'ℹ'
+        });
+    }
+
+    action(title, message, actionConfig, duration = 5000) {
+        return this.show({
+            type: 'info',
+            title,
+            message,
+            duration,
+            action: actionConfig
         });
     }
 }
@@ -245,24 +607,24 @@ class NotificationManager {
 // Profile Button System
 // =======================
 function createProfileButton() {
-    var existing = document.querySelector('.profile-button-container');
+    const existing = document.querySelector('.profile-button-container');
     if (existing) existing.remove();
 
-    var container = document.createElement('div');
+    const container = document.createElement('div');
     container.className = 'profile-button-container';
 
-    var button = document.createElement('button');
+    const button = document.createElement('button');
     button.className = 'profile-button';
     button.id = 'profileTrigger';
-      
-    // Gunakan avatar user atau default dengan DiceBear
-    var avatarUrl = (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || 
-                   ((window.Auth && window.Auth.currentUser) ? 
-                    generateDefaultAvatar(window.Auth.currentUser.email) : 
-                    generateDefaultAvatar('user'));
+    button.setAttribute('aria-label', 'Open profile panel');
     
-    // Buat img element dengan event handler untuk error
-    var img = document.createElement('img');
+    // Avatar image
+    const avatarUrl = (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || 
+                     ((window.Auth && window.Auth.currentUser) ? 
+                      generateDefaultAvatar(window.Auth.currentUser.email) : 
+                      generateDefaultAvatar('user'));
+    
+    const img = document.createElement('img');
     img.src = avatarUrl;
     img.alt = 'Profile';
     img.className = 'profile-image';
@@ -272,13 +634,62 @@ function createProfileButton() {
     
     button.appendChild(img);
 
+    // Profile completion indicator
     if (window.Auth && window.Auth.profileState && !window.Auth.profileState.isProfileComplete) {
-        var indicator = document.createElement('div');
+        const indicator = document.createElement('div');
         indicator.className = 'profile-indicator';
         indicator.textContent = '!';
         indicator.title = 'Profil belum lengkap';
         button.appendChild(indicator);
     }
+
+    // Add user info tooltip on hover
+    const tooltip = document.createElement('div');
+    tooltip.className = 'profile-tooltip';
+    tooltip.style.cssText = `
+        position: absolute;
+        bottom: -45px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2937;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s;
+        pointer-events: none;
+        z-index: 1000;
+    `;
+    
+    button.appendChild(tooltip);
+    
+    // Update tooltip content
+    function updateTooltip() {
+        if (window.Auth && window.Auth.userData) {
+            const name = window.Auth.userData.nama || 'User';
+            const email = window.Auth.currentUser?.email || '';
+            tooltip.textContent = `${name} • ${email}`;
+        } else {
+            tooltip.textContent = 'Guest User';
+        }
+    }
+    
+    // Hover events for tooltip
+    button.addEventListener('mouseenter', () => {
+        updateTooltip();
+        tooltip.style.opacity = '1';
+        tooltip.style.visibility = 'visible';
+        tooltip.style.bottom = '-40px';
+    });
+    
+    button.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.bottom = '-45px';
+    });
 
     button.addEventListener('click', showProfilePanel);
     container.appendChild(button);
@@ -286,23 +697,27 @@ function createProfileButton() {
 }
 
 function updateProfileButton() {
-    var button = document.getElementById('profileTrigger');
+    const button = document.getElementById('profileTrigger');
     if (!button) return;
 
-    var img = button.querySelector('.profile-image');
+    // Update avatar
+    const img = button.querySelector('.profile-image');
     if (img && window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) {
+        const oldSrc = img.src;
         img.src = window.Auth.userData.foto_profil;
-        // Tambahkan handler error untuk fallback
         img.onerror = function() {
-            this.src = generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
+            if (this.src !== oldSrc) {
+                this.src = generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
+            }
         };
     }
 
-    var indicator = button.querySelector('.profile-indicator');
+    // Update indicator
+    const indicator = button.querySelector('.profile-indicator');
     if (window.Auth && window.Auth.profileState && window.Auth.profileState.isProfileComplete) {
         if (indicator) indicator.remove();
     } else if (!indicator) {
-        var newIndicator = document.createElement('div');
+        const newIndicator = document.createElement('div');
         newIndicator.className = 'profile-indicator';
         newIndicator.textContent = '!';
         newIndicator.title = 'Profil belum lengkap';
@@ -311,164 +726,358 @@ function updateProfileButton() {
 }
 
 // =======================
-// Profile Panel System (Tanpa innerHTML panjang)
+// Profile Panel System (Lengkap)
 // =======================
 function createProfilePanel() {
-    var existing = document.getElementById('profilePanel');
+    // Remove existing panel
+    const existing = document.getElementById('profilePanel');
     if (existing) existing.remove();
 
-    // Buat overlay
-    var overlay = document.createElement('div');
+    // Create overlay
+    const overlay = document.createElement('div');
     overlay.className = 'profile-overlay';
     overlay.id = 'profileOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
 
-    // Buat panel
-    var panel = document.createElement('div');
+    // Create panel
+    const panel = document.createElement('div');
     panel.className = 'profile-panel';
     panel.id = 'profilePanel';
+    panel.style.cssText = `
+        background: white;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+    `;
 
     // Header
-    var header = document.createElement('div');
+    const header = document.createElement('div');
     header.className = 'profile-header';
+    header.style.cssText = `
+        padding: 24px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    `;
     
-    var headerTitle = document.createElement('h2');
+    const headerTitle = document.createElement('h2');
     headerTitle.textContent = (window.Auth && window.Auth.profileState && window.Auth.profileState.isProfileComplete) ? 
                              'Profil Saya' : 'Lengkapi Profil';
+    headerTitle.style.cssText = `
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
     
-    var closeButton = document.createElement('button');
+    const closeButton = document.createElement('button');
     closeButton.className = 'close-profile';
     closeButton.id = 'closeProfile';
+    closeButton.innerHTML = '&times;';
+    closeButton.style.cssText = `
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    `;
     
-    var closeSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    closeSVG.setAttribute('width', '20');
-    closeSVG.setAttribute('height', '20');
-    closeSVG.setAttribute('viewBox', '0 0 24 24');
-    closeSVG.setAttribute('fill', 'none');
-    closeSVG.setAttribute('stroke', 'currentColor');
-    closeSVG.setAttribute('stroke-width', '2');
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 0.3)';
+        closeButton.style.transform = 'rotate(90deg)';
+    });
     
-    var closePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    closePath.setAttribute('d', 'M18 6L6 18M6 6l12 12');
-    closeSVG.appendChild(closePath);
-    closeButton.appendChild(closeSVG);
-    
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.background = 'rgba(255, 255, 255, 0.2)';
+        closeButton.style.transform = 'rotate(0deg)';
+    });
+
     header.appendChild(headerTitle);
     header.appendChild(closeButton);
 
-    // Content
-    var content = document.createElement('div');
+    // Content container
+    const content = document.createElement('div');
     content.className = 'profile-content';
+    content.style.cssText = `
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    `;
 
     // Current Profile Section
-    var currentProfile = document.createElement('div');
+    const currentProfile = document.createElement('div');
     currentProfile.className = 'current-profile';
+    currentProfile.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 32px;
+        padding: 20px;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    `;
     
-    var currentAvatar = document.createElement('img');
+    const currentAvatar = document.createElement('img');
     currentAvatar.className = 'current-avatar';
     currentAvatar.alt = 'Current Avatar';
+    currentAvatar.style.cssText = `
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    `;
     currentAvatar.src = (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || 
                        generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
     currentAvatar.onerror = function() {
         this.src = generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
     };
     
-    var currentName = document.createElement('div');
+    const profileInfo = document.createElement('div');
+    profileInfo.style.cssText = `
+        flex: 1;
+    `;
+    
+    const currentName = document.createElement('div');
     currentName.className = 'current-name';
     currentName.textContent = (window.Auth && window.Auth.userData && window.Auth.userData.nama) || 
                              (window.Auth && window.Auth.currentUser && window.Auth.currentUser.displayName) || 
                              'Nama belum diisi';
+    currentName.style.cssText = `
+        font-size: 20px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    const currentEmail = document.createElement('div');
+    currentEmail.className = 'current-email';
+    currentEmail.textContent = (window.Auth && window.Auth.currentUser && window.Auth.currentUser.email) || 'Email tidak tersedia';
+    currentEmail.style.cssText = `
+        font-size: 14px;
+        color: #6b7280;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    const currentRole = document.createElement('div');
+    currentRole.className = 'current-role';
+    currentRole.textContent = `Role: ${(window.Auth && window.Auth.userData && window.Auth.userData.peran) || 'siswa'}`;
+    currentRole.style.cssText = `
+        font-size: 12px;
+        color: #9ca3af;
+        background: #e5e7eb;
+        padding: 4px 8px;
+        border-radius: 12px;
+        display: inline-block;
+        margin-top: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    profileInfo.appendChild(currentName);
+    profileInfo.appendChild(currentEmail);
+    profileInfo.appendChild(currentRole);
     
     currentProfile.appendChild(currentAvatar);
-    currentProfile.appendChild(currentName);
+    currentProfile.appendChild(profileInfo);
 
     // Edit Section
-    var editSection = document.createElement('div');
+    const editSection = document.createElement('div');
     editSection.className = 'edit-section';
+    editSection.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    `;
 
-    // Name Input Group
-    var nameInputGroup = document.createElement('div');
+    // Name Input
+    const nameInputGroup = document.createElement('div');
     nameInputGroup.className = 'name-input-group';
+    nameInputGroup.style.cssText = `
+        margin-bottom: 24px;
+    `;
     
-    var nameLabel = document.createElement('label');
+    const nameLabel = document.createElement('label');
     nameLabel.htmlFor = 'profileName';
     nameLabel.textContent = 'Nama Lengkap';
+    nameLabel.style.cssText = `
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
     
-    var nameInput = document.createElement('input');
+    const nameInput = document.createElement('input');
     nameInput.type = 'text';
     nameInput.id = 'profileName';
     nameInput.className = 'name-input';
     nameInput.placeholder = 'Masukkan nama lengkap';
     nameInput.value = (window.Auth && window.Auth.userData && window.Auth.userData.nama) || '';
+    nameInput.style.cssText = `
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    `;
     
+    nameInput.addEventListener('focus', () => {
+        nameInput.style.borderColor = '#3b82f6';
+        nameInput.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+    });
+    
+    nameInput.addEventListener('blur', () => {
+        nameInput.style.borderColor = '#e5e7eb';
+        nameInput.style.boxShadow = 'none';
+    });
+
     nameInputGroup.appendChild(nameLabel);
     nameInputGroup.appendChild(nameInput);
 
     // Avatar Options
-    var avatarOptionsContainer = document.createElement('div');
+    const avatarOptionsContainer = document.createElement('div');
     avatarOptionsContainer.className = 'avatar-options';
+    avatarOptionsContainer.style.cssText = `
+        margin-bottom: 24px;
+    `;
     
-    var optionTitle = document.createElement('div');
+    const optionTitle = document.createElement('div');
     optionTitle.className = 'option-title';
     optionTitle.textContent = 'Pilih Avatar';
+    optionTitle.style.cssText = `
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
     
-    var optionGrid = document.createElement('div');
+    const optionGrid = document.createElement('div');
     optionGrid.className = 'option-grid';
     optionGrid.id = 'avatarOptions';
+    optionGrid.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    `;
     
     avatarOptionsContainer.appendChild(optionTitle);
     avatarOptionsContainer.appendChild(optionGrid);
 
     // Custom Upload
-    var customUpload = document.createElement('div');
+    const customUpload = document.createElement('div');
     customUpload.className = 'custom-upload';
+    customUpload.style.cssText = `
+        margin-bottom: 24px;
+    `;
     
-    var uploadLabel = document.createElement('label');
+    const uploadLabel = document.createElement('label');
     uploadLabel.className = 'upload-label';
+    uploadLabel.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
     
-    var uploadSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    uploadSVG.setAttribute('width', '20');
-    uploadSVG.setAttribute('height', '20');
-    uploadSVG.setAttribute('viewBox', '0 0 24 24');
-    uploadSVG.setAttribute('fill', 'none');
-    uploadSVG.setAttribute('stroke', 'currentColor');
-    uploadSVG.setAttribute('stroke-width', '2');
-    uploadSVG.style.marginRight = '8px';
+    uploadLabel.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        Unggah Foto Sendiri
+    `;
     
-    var uploadPath1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    uploadPath1.setAttribute('d', 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4');
-    var uploadPolyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-    uploadPolyline.setAttribute('points', '17 8 12 3 7 8');
-    var uploadLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    uploadLine.setAttribute('x1', '12');
-    uploadLine.setAttribute('y1', '3');
-    uploadLine.setAttribute('x2', '12');
-    uploadLine.setAttribute('y2', '15');
-    
-    uploadSVG.appendChild(uploadPath1);
-    uploadSVG.appendChild(uploadPolyline);
-    uploadSVG.appendChild(uploadLine);
-    
-    uploadLabel.appendChild(uploadSVG);
-    uploadLabel.appendChild(document.createTextNode('Unggah Foto Sendiri'));
-    
-    var uploadInput = document.createElement('input');
+    const uploadInput = document.createElement('input');
     uploadInput.type = 'file';
     uploadInput.id = 'avatarUpload';
     uploadInput.className = 'upload-input';
     uploadInput.accept = 'image/*';
+    uploadInput.style.cssText = `
+        display: none;
+    `;
+    
     uploadLabel.appendChild(uploadInput);
     
-    var previewContainer = document.createElement('div');
+    const previewContainer = document.createElement('div');
     previewContainer.className = 'preview-container';
     previewContainer.id = 'previewContainer';
+    previewContainer.style.cssText = `
+        display: none;
+        margin-top: 16px;
+        text-align: center;
+    `;
     
-    var previewTitle = document.createElement('div');
+    const previewTitle = document.createElement('div');
     previewTitle.className = 'preview-title';
     previewTitle.textContent = 'Pratinjau:';
+    previewTitle.style.cssText = `
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
     
-    var previewImage = document.createElement('img');
+    const previewImage = document.createElement('img');
     previewImage.className = 'preview-image';
     previewImage.id = 'previewImage';
+    previewImage.style.cssText = `
+        max-width: 100px;
+        max-height: 100px;
+        border-radius: 50%;
+        border: 3px solid #3b82f6;
+        object-fit: cover;
+    `;
     
     previewContainer.appendChild(previewTitle);
     previewContainer.appendChild(previewImage);
@@ -477,30 +1086,83 @@ function createProfilePanel() {
     customUpload.appendChild(previewContainer);
 
     // Status Message
-    var statusMessage = document.createElement('div');
+    const statusMessage = document.createElement('div');
     statusMessage.className = 'status-message';
     statusMessage.id = 'statusMessage';
-    statusMessage.style.display = 'none';
+    statusMessage.style.cssText = `
+        display: none;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
 
-    // Profile Actions
-    var profileActions = document.createElement('div');
+    // Actions
+    const profileActions = document.createElement('div');
     profileActions.className = 'profile-actions';
+    profileActions.style.cssText = `
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    `;
     
-    var saveBtn = document.createElement('button');
+    const saveBtn = document.createElement('button');
     saveBtn.className = 'save-btn';
     saveBtn.id = 'saveProfile';
     saveBtn.disabled = true;
+    saveBtn.style.cssText = `
+        flex: 1;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        position: relative;
+        overflow: hidden;
+    `;
     
-    var saveText = document.createElement('span');
+    const saveText = document.createElement('span');
     saveText.id = 'saveText';
     saveText.textContent = 'Simpan Perubahan';
+    saveText.style.cssText = `
+        position: relative;
+        z-index: 1;
+    `;
     
-    var saveLoading = document.createElement('span');
+    const saveLoading = document.createElement('span');
     saveLoading.className = 'save-loading';
     saveLoading.id = 'saveLoading';
+    saveLoading.style.cssText = `
+        display: none;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        z-index: 2;
+    `;
     
-    var spinner = document.createElement('span');
+    const spinner = document.createElement('span');
     spinner.className = 'spinner';
+    spinner.style.cssText = `
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+    `;
     
     saveLoading.appendChild(spinner);
     saveLoading.appendChild(document.createTextNode('Menyimpan...'));
@@ -508,108 +1170,189 @@ function createProfilePanel() {
     saveBtn.appendChild(saveText);
     saveBtn.appendChild(saveLoading);
     
-    var cancelBtn = document.createElement('button');
+    const cancelBtn = document.createElement('button');
     cancelBtn.className = 'cancel-btn';
     cancelBtn.id = 'cancelEdit';
     cancelBtn.textContent = 'Batal';
+    cancelBtn.style.cssText = `
+        padding: 14px 24px;
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
     
+    // Hover effects
+    saveBtn.addEventListener('mouseenter', () => {
+        if (!saveBtn.disabled) {
+            saveBtn.style.transform = 'translateY(-2px)';
+            saveBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+        }
+    });
+    
+    saveBtn.addEventListener('mouseleave', () => {
+        saveBtn.style.transform = 'translateY(0)';
+        saveBtn.style.boxShadow = 'none';
+    });
+    
+    cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.background = '#e5e7eb';
+        cancelBtn.style.transform = 'translateY(-2px)';
+    });
+    
+    cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.background = '#f3f4f6';
+        cancelBtn.style.transform = 'translateY(0)';
+    });
+
     profileActions.appendChild(saveBtn);
     profileActions.appendChild(cancelBtn);
 
-    // Assemble Edit Section
+    // Assemble edit section
     editSection.appendChild(nameInputGroup);
     editSection.appendChild(avatarOptionsContainer);
     editSection.appendChild(customUpload);
     editSection.appendChild(statusMessage);
     editSection.appendChild(profileActions);
 
-    // Assemble Content
+    // Assemble content
     content.appendChild(currentProfile);
     content.appendChild(editSection);
 
-    // Assemble Panel
+    // Assemble panel
     panel.appendChild(header);
     panel.appendChild(content);
 
-    // Assemble Overlay
+    // Assemble overlay
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
     
-    // Initialize panel functionality
+    // Initialize
     initializeProfilePanel();
 }
 
 function initializeProfilePanel() {
     populateAvatarOptions();
 
+    // Event listeners
     document.getElementById('closeProfile').addEventListener('click', hideProfilePanel);
     document.getElementById('cancelEdit').addEventListener('click', hideProfilePanel);
+    
     document.getElementById('profileOverlay').addEventListener('click', function(e) {
         if (e.target.id === 'profileOverlay') hideProfilePanel();
     });
 
-    var nameInput = document.getElementById('profileName');
+    const nameInput = document.getElementById('profileName');
     nameInput.addEventListener('input', function() {
         if (window.Auth && window.Auth.profileState) {
-            var state = Object.assign({}, window.Auth.profileState);
-            state.tempName = nameInput.value.trim();
-            window.Auth.profileState = state;
+            window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
+                tempName: nameInput.value.trim()
+            });
         }
         checkForChanges();
     });
 
-    var uploadInput = document.getElementById('avatarUpload');
+    const uploadInput = document.getElementById('avatarUpload');
     uploadInput.addEventListener('change', handleAvatarUpload);
 
     document.getElementById('saveProfile').addEventListener('click', saveProfile);
 
     if (window.Auth && window.Auth.profileState) {
-        var state = Object.assign({}, window.Auth.profileState);
-        state.tempName = (window.Auth && window.Auth.userData && window.Auth.userData.nama) || '';
-        window.Auth.profileState = state;
+        window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
+            tempName: (window.Auth && window.Auth.userData && window.Auth.userData.nama) || ''
+        });
     }
     checkForChanges();
 }
 
 function populateAvatarOptions() {
-    var container = document.getElementById('avatarOptions');
+    const container = document.getElementById('avatarOptions');
     if (!container) return;
 
     container.innerHTML = '';
-    var avatars = (window.Auth && window.Auth.PROFILE_AVATARS) || [];
+    const avatars = (window.Auth && window.Auth.PROFILE_AVATARS) || [];
 
     avatars.forEach(function(avatar) {
-        var option = document.createElement('div');
+        const option = document.createElement('div');
         option.className = 'avatar-option';
         option.dataset.id = avatar.id;
+        option.style.cssText = `
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        `;
 
-        var img = document.createElement('img');
+        const img = document.createElement('img');
         img.src = avatar.url;
         img.alt = avatar.name;
+        img.style.cssText = `
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        `;
+        
         img.onerror = function() {
-            var label = document.createElement('div');
+            // Create fallback with initial
+            const label = document.createElement('div');
             label.className = 'option-label';
-            label.textContent = avatar.name;
+            label.textContent = avatar.name.charAt(0).toUpperCase();
+            label.style.cssText = `
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: ${avatar.color || '#3b82f6'};
+                color: white;
+                font-weight: bold;
+                font-size: 18px;
+            `;
             option.innerHTML = '';
             option.appendChild(label);
         };
 
         option.appendChild(img);
 
-        // Cek apakah avatar ini yang sedang dipilih
+        // Check if this is the current avatar
         if (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) {
-            var currentUrl = window.Auth.userData.foto_profil;
+            const currentUrl = window.Auth.userData.foto_profil;
             if (currentUrl === avatar.url) {
-                option.classList.add('selected');
+                option.style.borderColor = avatar.color || '#3b82f6';
+                option.style.boxShadow = `0 0 0 3px ${avatar.color || '#3b82f6'}40`;
                 if (window.Auth && window.Auth.profileState) {
-                    window.Auth.profileState = Object.assign({}, window.Auth.profileState, { selectedAvatar: avatar.id });
+                    window.Auth.profileState.selectedAvatar = avatar.id;
                 }
             }
         }
 
+        option.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('selected')) {
+                this.style.transform = 'scale(1.1)';
+                this.style.borderColor = avatar.color || '#3b82f6';
+            }
+        });
+
+        option.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('selected')) {
+                this.style.transform = 'scale(1)';
+                this.style.borderColor = 'transparent';
+            }
+        });
+
         option.addEventListener('click', function() {
             selectAvatar(avatar.id);
         });
+        
         container.appendChild(option);
     });
 }
@@ -622,39 +1365,50 @@ function selectAvatar(avatarId) {
         });
     }
 
+    // Update UI
     document.querySelectorAll('.avatar-option').forEach(function(opt) {
         opt.classList.remove('selected');
-        if (opt.dataset.id === avatarId) opt.classList.add('selected');
+        opt.style.borderColor = 'transparent';
+        opt.style.boxShadow = 'none';
+        opt.style.transform = 'scale(1)';
+        
+        if (opt.dataset.id === avatarId) {
+            opt.classList.add('selected');
+            const avatar = (window.Auth.PROFILE_AVATARS || []).find(a => a.id === avatarId);
+            opt.style.borderColor = avatar?.color || '#3b82f6';
+            opt.style.boxShadow = `0 0 0 3px ${avatar?.color || '#3b82f6'}40`;
+        }
     });
 
-    var previewContainer = document.getElementById('previewContainer');
-    var previewImage = document.getElementById('previewImage');
-    previewContainer.classList.remove('active');
+    // Hide custom upload preview
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    previewContainer.style.display = 'none';
     previewImage.src = '';
 
     checkForChanges();
 }
 
 function handleAvatarUpload(event) {
-    var file = event.target.files[0];
+    const file = event.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-        if (window.UI && window.UI.Notification && window.UI.Notification.error) {
+        if (window.UI && window.UI.Notification) {
             window.UI.Notification.error('Error', 'Hanya file gambar yang diperbolehkan');
         }
         return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-        if (window.UI && window.UI.Notification && window.UI.Notification.error) {
+        if (window.UI && window.UI.Notification) {
             window.UI.Notification.error('Error', 'Ukuran gambar maksimal 2MB');
         }
         return;
     }
 
     try {
-        var reader = new FileReader();
+        const reader = new FileReader();
         reader.onload = function(e) {
             if (window.Auth && window.Auth.profileState) {
                 window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
@@ -663,18 +1417,24 @@ function handleAvatarUpload(event) {
                 });
             }
 
+            // Deselect all avatar options
             document.querySelectorAll('.avatar-option').forEach(function(opt) {
                 opt.classList.remove('selected');
+                opt.style.borderColor = 'transparent';
+                opt.style.boxShadow = 'none';
             });
-            var previewImage = document.getElementById('previewImage');
-            var previewContainer = document.getElementById('previewContainer');
+
+            // Show preview
+            const previewImage = document.getElementById('previewImage');
+            const previewContainer = document.getElementById('previewContainer');
             previewImage.src = e.target.result;
-            previewContainer.classList.add('active');
+            previewContainer.style.display = 'block';
+            
             checkForChanges();
         };
         reader.readAsDataURL(file);
     } catch (error) {
-        if (window.UI && window.UI.Notification && window.UI.Notification.error) {
+        if (window.UI && window.UI.Notification) {
             window.UI.Notification.error('Error', 'Gagal membaca file');
         }
         console.error('Upload error:', error);
@@ -682,117 +1442,175 @@ function handleAvatarUpload(event) {
 }
 
 function checkForChanges() {
-    var nameChanged = (window.Auth && window.Auth.profileState && window.Auth.profileState.tempName) !== 
+    const nameChanged = (window.Auth && window.Auth.profileState && window.Auth.profileState.tempName) !== 
                      ((window.Auth && window.Auth.userData && window.Auth.userData.nama) || '');
-    var avatarChanged = false;
+    let avatarChanged = false;
 
     if (window.Auth && window.Auth.profileState) {
-        var state = window.Auth.profileState;
+        const state = window.Auth.profileState;
         if (state.selectedAvatar === 'custom' && state.customAvatar) {
             avatarChanged = state.customAvatar !== ((window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || '');
         } else if (state.selectedAvatar) {
-            var avatars = (window.Auth && window.Auth.PROFILE_AVATARS) || [];
-            var selected = avatars.find(function(a) { return a.id === state.selectedAvatar; });
+            const avatars = (window.Auth && window.Auth.PROFILE_AVATARS) || [];
+            const selected = avatars.find(function(a) { return a.id === state.selectedAvatar; });
             avatarChanged = (selected && selected.url) !== ((window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || '');
         }
 
         window.Auth.profileState = Object.assign({}, state, { hasChanges: nameChanged || avatarChanged });
     }
 
-    var saveBtn = document.getElementById('saveProfile');
+    const saveBtn = document.getElementById('saveProfile');
     if (saveBtn) {
-        var isLoading = (window.Auth && window.Auth.profileState && window.Auth.profileState.isLoading) || false;
-        var hasChanges = (window.Auth && window.Auth.profileState && window.Auth.profileState.hasChanges) || false;
+        const isLoading = (window.Auth && window.Auth.profileState && window.Auth.profileState.isLoading) || false;
+        const hasChanges = (window.Auth && window.Auth.profileState && window.Auth.profileState.hasChanges) || false;
+        
         saveBtn.disabled = !hasChanges || isLoading;
+        
+        if (hasChanges && !isLoading) {
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+        } else {
+            saveBtn.style.opacity = '0.6';
+            saveBtn.style.cursor = 'not-allowed';
+        }
     }
 }
 
 function showProfilePanel() {
-    var overlay = document.getElementById('profileOverlay');
-    var panel = document.getElementById('profilePanel');
+    const overlay = document.getElementById('profileOverlay');
+    const panel = document.getElementById('profilePanel');
 
     if (!overlay || !panel) {
         createProfilePanel();
         setTimeout(function() {
-            document.getElementById('profileOverlay').classList.add('active');
-            document.getElementById('profilePanel').classList.add('active');
+            document.getElementById('profileOverlay').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('profileOverlay').style.opacity = '1';
+                document.getElementById('profilePanel').style.opacity = '1';
+                document.getElementById('profilePanel').style.transform = 'translateY(0) scale(1)';
+            }, 10);
         }, 10);
     } else {
-        overlay.classList.add('active');
-        setTimeout(function() { panel.classList.add('active'); }, 10);
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            panel.style.opacity = '1';
+            panel.style.transform = 'translateY(0) scale(1)';
+        }, 10);
     }
 
-    var nameInput = document.getElementById('profileName');
+    // Update form values
+    const nameInput = document.getElementById('profileName');
     if (nameInput && window.Auth && window.Auth.userData) {
         nameInput.value = window.Auth.userData.nama || '';
         if (window.Auth && window.Auth.profileState) {
-            window.Auth.profileState = Object.assign({}, window.Auth.profileState, { tempName: window.Auth.userData.nama || '' });
+            window.Auth.profileState.tempName = window.Auth.userData.nama || '';
         }
     }
 
-    showStatus('', '');
+    // Reset status
+    const statusEl = document.getElementById('statusMessage');
+    if (statusEl) {
+        statusEl.style.display = 'none';
+        statusEl.textContent = '';
+    }
+
     checkForChanges();
 }
 
 function hideProfilePanel() {
-    var overlay = document.getElementById('profileOverlay');
-    var panel = document.getElementById('profilePanel');
+    const overlay = document.getElementById('profileOverlay');
+    const panel = document.getElementById('profilePanel');
 
-    if (panel) panel.classList.remove('active');
+    if (panel) {
+        panel.style.opacity = '0';
+        panel.style.transform = 'translateY(-20px) scale(0.95)';
+    }
+    
     if (overlay) {
-        setTimeout(function() {
-            overlay.classList.remove('active');
-            var uploadInput = document.getElementById('avatarUpload');
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            const uploadInput = document.getElementById('avatarUpload');
             if (uploadInput) uploadInput.value = '';
         }, 300);
     }
 }
 
 function showStatus(message, type) {
-    var statusEl = document.getElementById('statusMessage');
+    const statusEl = document.getElementById('statusMessage');
     if (!statusEl) return;
 
     statusEl.textContent = message;
     statusEl.className = 'status-message';
-    statusEl.style.display = message ? 'block' : 'none';
+    statusEl.style.display = 'block';
 
     if (type === 'success') {
-        statusEl.classList.add('status-success');
-        setTimeout(function() { statusEl.style.display = 'none'; }, 3000);
+        statusEl.style.cssText += `
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        `;
     } else if (type === 'error') {
-        statusEl.classList.add('status-error');
+        statusEl.style.cssText += `
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        `;
+    } else if (type === 'info') {
+        statusEl.style.cssText += `
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        `;
     }
 
-    // Also show notification for important messages
+    // Auto-hide success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            statusEl.style.display = 'none';
+        }, 3000);
+    }
+
+    // Also show notification
     if (message && (type === 'success' || type === 'error')) {
-        var notificationType = type === 'success' ? 'success' : 'error';
-        var title = type === 'success' ? 'Success' : 'Error';
-        if (window.UI && window.UI.Notification && window.UI.Notification[notificationType]) {
-            window.UI.Notification[notificationType](title, message);
+        if (window.UI && window.UI.Notification) {
+            window.UI.Notification[type === 'success' ? 'success' : 'error'](
+                type === 'success' ? 'Success' : 'Error',
+                message
+            );
         }
     }
 }
 
 async function saveProfile() {
-    if (!window.Auth || !window.Auth.profileState || !window.Auth.userData || !window.Auth.currentUser) return;
+    if (!window.Auth || !window.Auth.profileState || !window.Auth.userData || !window.Auth.currentUser) {
+        showStatus('Sistem auth tidak tersedia', 'error');
+        return;
+    }
 
-    var state = window.Auth.profileState;
+    const state = window.Auth.profileState;
     if (state.isLoading || !state.hasChanges) return;
 
     try {
+        // Show loading state
         window.Auth.profileState = Object.assign({}, state, { isLoading: true });
         updateSaveButtonState();
 
-        var updates = {};
+        // Prepare updates
+        const updates = {};
+        
+        // Name update
         if (state.tempName && state.tempName !== window.Auth.userData.nama) {
             updates.nama = state.tempName.trim();
         }
 
-        var newAvatarUrl = window.Auth.userData.foto_profil;
+        // Avatar update
+        let newAvatarUrl = window.Auth.userData.foto_profil;
         if (state.selectedAvatar === 'custom' && state.customAvatar) {
             newAvatarUrl = state.customAvatar;
         } else if (state.selectedAvatar) {
-            var selected = (window.Auth.PROFILE_AVATARS || []).find(function(a) { return a.id === state.selectedAvatar; });
+            const selected = (window.Auth.PROFILE_AVATARS || []).find(a => a.id === state.selectedAvatar);
             newAvatarUrl = (selected && selected.url) || '';
         }
 
@@ -800,13 +1618,18 @@ async function saveProfile() {
             updates.foto_profil = newAvatarUrl;
         }
 
-        var willBeComplete = window.Auth.checkProfileCompleteness(Object.assign({}, window.Auth.userData, updates));
+        // Check if profile will be complete
+        const willBeComplete = window.Auth.checkProfileCompleteness(
+            Object.assign({}, window.Auth.userData, updates)
+        );
 
         updates.profilLengkap = willBeComplete;
         updates.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
+        // Save to Firestore
         await firebaseDb.collection('users').doc(window.Auth.currentUser.uid).update(updates);
 
+        // Update local state
         window.Auth.userData = Object.assign({}, window.Auth.userData, updates);
         window.Auth.profileState = Object.assign({}, state, {
             isProfileComplete: willBeComplete,
@@ -814,36 +1637,50 @@ async function saveProfile() {
             isLoading: false
         });
 
+        // Update UI
         updateProfileButton();
         
-        // NOTIFIKASI SUKSES - Sistem Feedback
-        if (window.UI && window.UI.Notification && window.UI.Notification.success) {
-            window.UI.Notification.success('Sukses', 'Profil berhasil disimpan!');
-        }
-
-        var currentAvatar = document.querySelector('.current-avatar');
-        var currentName = document.querySelector('.current-name');
+        // Update profile panel
+        const currentAvatar = document.querySelector('.current-avatar');
+        const currentName = document.querySelector('.current-name');
         if (currentAvatar && updates.foto_profil) {
             currentAvatar.src = updates.foto_profil;
             currentAvatar.onerror = function() {
                 this.src = generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
             };
         }
-        if (currentName && updates.nama) currentName.textContent = updates.nama;
+        if (currentName && updates.nama) {
+            currentName.textContent = updates.nama;
+        }
 
+        // Show success message
+        showStatus('Profil berhasil disimpan!', 'success');
+        
+        if (window.UI && window.UI.Notification) {
+            window.UI.Notification.success('Sukses', 'Profil berhasil disimpan!');
+        }
+
+        // Auto-close if profile is now complete
         if (willBeComplete && !state.autoCloseTriggered) {
             window.Auth.profileState = Object.assign({}, window.Auth.profileState, { autoCloseTriggered: true });
-            setTimeout(hideProfilePanel, 1500);
+            setTimeout(() => {
+                hideProfilePanel();
+                // Reset autoCloseTriggered
+                window.Auth.profileState = Object.assign({}, window.Auth.profileState, { autoCloseTriggered: false });
+            }, 1500);
         }
 
     } catch (error) {
         console.error('Save profile error:', error);
         
-        // NOTIFIKASI ERROR - Sistem Feedback
-        if (window.UI && window.UI.Notification && window.UI.Notification.error) {
+        // Show error message
+        showStatus('Gagal menyimpan profil: ' + error.message, 'error');
+        
+        if (window.UI && window.UI.Notification) {
             window.UI.Notification.error('Gagal', 'Profil gagal disimpan: ' + error.message);
         }
         
+        // Reset loading state
         if (window.Auth && window.Auth.profileState) {
             window.Auth.profileState = Object.assign({}, window.Auth.profileState, { isLoading: false });
         }
@@ -853,23 +1690,858 @@ async function saveProfile() {
 }
 
 function updateSaveButtonState() {
-    var saveBtn = document.getElementById('saveProfile');
-    var saveText = document.getElementById('saveText');
-    var saveLoading = document.getElementById('saveLoading');
+    const saveBtn = document.getElementById('saveProfile');
+    const saveText = document.getElementById('saveText');
+    const saveLoading = document.getElementById('saveLoading');
 
-    if (!saveBtn) return;
+    if (!saveBtn || !saveText || !saveLoading) return;
 
-    var isLoading = (window.Auth && window.Auth.profileState && window.Auth.profileState.isLoading) || false;
-    var hasChanges = (window.Auth && window.Auth.profileState && window.Auth.profileState.hasChanges) || false;
+    const isLoading = (window.Auth && window.Auth.profileState && window.Auth.profileState.isLoading) || false;
+    const hasChanges = (window.Auth && window.Auth.profileState && window.Auth.profileState.hasChanges) || false;
+    
     saveBtn.disabled = !hasChanges || isLoading;
 
     if (isLoading) {
         saveText.style.display = 'none';
-        saveLoading.classList.add('active');
+        saveLoading.style.display = 'flex';
+        saveBtn.style.cursor = 'wait';
     } else {
         saveText.style.display = 'inline';
-        saveLoading.classList.remove('active');
+        saveLoading.style.display = 'none';
+        saveBtn.style.cursor = hasChanges ? 'pointer' : 'not-allowed';
     }
+}
+
+// =======================
+// Modal System
+// =======================
+class ModalSystem {
+    constructor() {
+        this.modals = new Map();
+        this.init();
+    }
+
+    init() {
+        this.injectModalCSS();
+        console.log('📦 Modal System Initialized');
+    }
+
+    injectModalCSS() {
+        if (document.querySelector('#modal-css')) return;
+
+        const style = document.createElement('style');
+        style.id = 'modal-css';
+        style.textContent = `
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 100000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            
+            .modal {
+                background: white;
+                border-radius: 16px;
+                width: 90%;
+                max-width: 500px;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                transform: translateY(-20px) scale(0.95);
+                opacity: 0;
+                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            
+            .modal.active {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            
+            .modal-header {
+                padding: 20px 24px;
+                border-bottom: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #f9fafb;
+            }
+            
+            .modal-title {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+                color: #1f2937;
+            }
+            
+            .modal-close {
+                background: none;
+                border: none;
+                font-size: 24px;
+                color: #6b7280;
+                cursor: pointer;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+            
+            .modal-close:hover {
+                background: #f3f4f6;
+                color: #374151;
+            }
+            
+            .modal-content {
+                padding: 24px;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+            
+            .modal-footer {
+                padding: 20px 24px;
+                border-top: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+                background: #f9fafb;
+            }
+            
+            .modal-btn {
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: none;
+            }
+            
+            .modal-btn-primary {
+                background: #3b82f6;
+                color: white;
+            }
+            
+            .modal-btn-primary:hover {
+                background: #2563eb;
+                transform: translateY(-2px);
+            }
+            
+            .modal-btn-secondary {
+                background: #f3f4f6;
+                color: #374151;
+                border: 1px solid #d1d5db;
+            }
+            
+            .modal-btn-secondary:hover {
+                background: #e5e7eb;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    show(options) {
+        const {
+            title = 'Modal',
+            content = '',
+            buttons = [],
+            onClose = null,
+            closeOnOverlayClick = true
+        } = options;
+
+        const id = `modal-${Date.now()}`;
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = `${id}-overlay`;
+
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = id;
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'modal-header';
+        
+        const titleEl = document.createElement('h2');
+        titleEl.className = 'modal-title';
+        titleEl.textContent = title;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'modal-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', () => this.hide(id));
+        
+        header.appendChild(titleEl);
+        header.appendChild(closeBtn);
+
+        // Content
+        const contentEl = document.createElement('div');
+        contentEl.className = 'modal-content';
+        
+        if (typeof content === 'string') {
+            contentEl.innerHTML = content;
+        } else if (content instanceof HTMLElement) {
+            contentEl.appendChild(content);
+        } else {
+            contentEl.textContent = content;
+        }
+
+        // Footer with buttons
+        const footer = document.createElement('div');
+        footer.className = 'modal-footer';
+        
+        buttons.forEach(btn => {
+            const button = document.createElement('button');
+            button.className = `modal-btn modal-btn-${btn.type || 'secondary'}`;
+            button.textContent = btn.text;
+            
+            if (btn.onClick) {
+                button.addEventListener('click', () => {
+                    btn.onClick();
+                    if (btn.closeOnClick !== false) {
+                        this.hide(id);
+                    }
+                });
+            } else {
+                button.addEventListener('click', () => this.hide(id));
+            }
+            
+            footer.appendChild(button);
+        });
+
+        // Assemble modal
+        modal.appendChild(header);
+        modal.appendChild(contentEl);
+        if (buttons.length > 0) {
+            modal.appendChild(footer);
+        }
+
+        // Assemble overlay
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Store reference
+        this.modals.set(id, { overlay, modal, onClose });
+
+        // Show with animation
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            modal.classList.add('active');
+        }, 10);
+
+        // Overlay click handler
+        if (closeOnOverlayClick) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    this.hide(id);
+                }
+            });
+        }
+
+        // Escape key handler
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.hide(id);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+        this.modals.get(id).escapeHandler = escapeHandler;
+
+        return id;
+    }
+
+    hide(id) {
+        const modalData = this.modals.get(id);
+        if (!modalData) return;
+
+        const { overlay, modal, onClose, escapeHandler } = modalData;
+
+        // Remove escape handler
+        if (escapeHandler) {
+            document.removeEventListener('keydown', escapeHandler);
+        }
+
+        // Animate out
+        modal.classList.remove('active');
+        overlay.style.opacity = '0';
+
+        // Remove from DOM
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
+            }
+            this.modals.delete(id);
+            
+            // Call onClose callback
+            if (onClose) {
+                onClose();
+            }
+        }, 300);
+    }
+
+    confirm(options) {
+        return new Promise((resolve) => {
+            const modalId = this.show({
+                title: options.title || 'Konfirmasi',
+                content: options.message || 'Apakah anda yakin?',
+                buttons: [
+                    {
+                        text: options.cancelText || 'Batal',
+                        type: 'secondary',
+                        onClick: () => resolve(false)
+                    },
+                    {
+                        text: options.confirmText || 'Ya',
+                        type: 'primary',
+                        onClick: () => resolve(true)
+                    }
+                ]
+            });
+            
+            // Store modal ID for potential programmatic closing
+            this.modals.get(modalId).promiseResolve = resolve;
+        });
+    }
+
+    alert(options) {
+        return new Promise((resolve) => {
+            this.show({
+                title: options.title || 'Informasi',
+                content: options.message || '',
+                buttons: [
+                    {
+                        text: options.okText || 'OK',
+                        type: 'primary',
+                        onClick: () => resolve()
+                    }
+                ]
+            });
+        });
+    }
+
+    prompt(options) {
+        return new Promise((resolve) => {
+            const inputId = `prompt-input-${Date.now()}`;
+            const content = document.createElement('div');
+            content.innerHTML = `
+                <p style="margin-bottom: 12px; color: #374151;">${options.message || 'Masukkan nilai:'}</p>
+                <input type="${options.type || 'text'}" 
+                       id="${inputId}" 
+                       class="prompt-input"
+                       style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;"
+                       placeholder="${options.placeholder || ''}"
+                       value="${options.defaultValue || ''}">
+            `;
+            
+            const modalId = this.show({
+                title: options.title || 'Input',
+                content: content,
+                buttons: [
+                    {
+                        text: options.cancelText || 'Batal',
+                        type: 'secondary',
+                        onClick: () => resolve(null)
+                    },
+                    {
+                        text: options.confirmText || 'OK',
+                        type: 'primary',
+                        onClick: () => {
+                            const input = document.getElementById(inputId);
+                            resolve(input ? input.value : '');
+                        }
+                    }
+                ]
+            });
+            
+            // Focus input
+            setTimeout(() => {
+                const input = document.getElementById(inputId);
+                if (input) input.focus();
+            }, 100);
+        });
+    }
+}
+
+// =======================
+// Toast System
+// =======================
+class ToastSystem {
+    constructor() {
+        this.container = null;
+        this.toasts = new Map();
+        this.init();
+    }
+
+    init() {
+        this.createContainer();
+        this.injectToastCSS();
+        console.log('🍞 Toast System Initialized');
+    }
+
+    createContainer() {
+        if (!document.getElementById('toast-container')) {
+            this.container = document.createElement('div');
+            this.container.id = 'toast-container';
+            this.container.className = 'toast-container';
+            document.body.appendChild(this.container);
+        } else {
+            this.container = document.getElementById('toast-container');
+        }
+    }
+
+    injectToastCSS() {
+        if (document.querySelector('#toast-css')) return;
+
+        const style = document.createElement('style');
+        style.id = 'toast-css';
+        style.textContent = `
+            .toast-container {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 99999;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                pointer-events: none;
+                width: 100%;
+                max-width: 400px;
+            }
+            
+            .toast {
+                background: #1f2937;
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                width: 100%;
+                transform: translateY(100px);
+                opacity: 0;
+                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
+                background: rgba(31, 41, 55, 0.95);
+            }
+            
+            .toast.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            
+            .toast.hide {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+            
+            .toast-icon {
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                flex-shrink: 0;
+            }
+            
+            .toast-message {
+                flex: 1;
+                font-size: 14px;
+                line-height: 1.5;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+            
+            .toast-close {
+                background: transparent;
+                border: none;
+                color: rgba(255, 255, 255, 0.6);
+                font-size: 20px;
+                cursor: pointer;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s;
+                flex-shrink: 0;
+                padding: 0;
+                line-height: 1;
+            }
+            
+            .toast-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+            }
+            
+            .toast.success {
+                background: rgba(16, 185, 129, 0.95);
+            }
+            
+            .toast.error {
+                background: rgba(239, 68, 68, 0.95);
+            }
+            
+            .toast.warning {
+                background: rgba(245, 158, 11, 0.95);
+            }
+            
+            .toast.info {
+                background: rgba(59, 130, 246, 0.95);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    show(message, options = {}) {
+        const {
+            type = 'info',
+            duration = 3000,
+            closeable = true,
+            icon = null
+        } = options;
+
+        const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const toast = document.createElement('div');
+        toast.id = id;
+        toast.className = `toast ${type}`;
+        
+        const iconContent = icon || this.getIcon(type);
+        
+        toast.innerHTML = `
+            <div class="toast-icon">${iconContent}</div>
+            <div class="toast-message">${message}</div>
+            ${closeable ? '<button class="toast-close">&times;</button>' : ''}
+        `;
+
+        // Event listeners
+        if (closeable) {
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                this.hide(id);
+            });
+        }
+
+        toast.addEventListener('click', (e) => {
+            if (!e.target.closest('.toast-close')) {
+                this.hide(id);
+            }
+        });
+
+        // Add to container
+        this.container.appendChild(toast);
+        
+        // Store reference
+        this.toasts.set(id, { element: toast, timeout: null });
+
+        // Animate in
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
+        // Auto-hide
+        if (duration > 0) {
+            const timeout = setTimeout(() => {
+                this.hide(id);
+            }, duration);
+            this.toasts.get(id).timeout = timeout;
+        }
+
+        return id;
+    }
+
+    getIcon(type) {
+        const icons = {
+            success: '✓',
+            error: '✗',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        return icons[type] || '🔔';
+    }
+
+    hide(id) {
+        const toastData = this.toasts.get(id);
+        if (!toastData) return;
+
+        const { element, timeout } = toastData;
+        
+        if (timeout) clearTimeout(timeout);
+        
+        element.classList.remove('show');
+        element.classList.add('hide');
+        
+        setTimeout(() => {
+            if (element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+            this.toasts.delete(id);
+        }, 300);
+    }
+
+    clearAll() {
+        this.toasts.forEach((toastData, id) => {
+            this.hide(id);
+        });
+    }
+
+    // Convenience methods
+    success(message, duration = 3000) {
+        return this.show(message, { type: 'success', duration });
+    }
+
+    error(message, duration = 4000) {
+        return this.show(message, { type: 'error', duration });
+    }
+
+    warning(message, duration = 3500) {
+        return this.show(message, { type: 'warning', duration });
+    }
+
+    info(message, duration = 2500) {
+        return this.show(message, { type: 'info', duration });
+    }
+}
+
+// =======================
+// Loading System
+// =======================
+function showAuthLoading(text) {
+    text = text || 'Memverifikasi sesi login…';
+    
+    let el = document.getElementById('loadingIndicator');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'loadingIndicator';
+        el.className = 'loading-indicator';
+        
+        el.innerHTML = `
+            <div class="block-loader">
+                <div class="block-block" style="--i:0"></div>
+                <div class="block-block" style="--i:1"></div>
+                <div class="block-block" style="--i:2"></div>
+                <div class="block-block" style="--i:3"></div>
+                <div class="block-block" style="--i:4"></div>
+            </div>
+            <div class="loading-text">${text}</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(el);
+        injectLoadingCSS();
+    }
+
+    el.style.display = 'flex';
+    const textEl = el.querySelector('.loading-text');
+    if (textEl) textEl.textContent = text;
+    
+    // Force reflow for animation
+    el.offsetHeight;
+    
+    console.log('[BYTEWARD]', text);
+}
+
+function hideAuthLoading() {
+    const el = document.getElementById('loadingIndicator');
+    if (!el) return;
+    
+    el.style.opacity = '0';
+    setTimeout(() => { 
+        el.style.display = 'none';
+        el.style.opacity = '1';
+    }, 300);
+}
+
+function injectLoadingCSS() {
+    if (document.querySelector('#loading-css')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'loading-css';
+    style.textContent = `
+        .loading-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            flex-direction: column;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+        
+        .block-loader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 60px;
+        }
+        
+        .block-block {
+            width: 12px;
+            height: 40px;
+            background: linear-gradient(to bottom, #3b82f6, #2563eb);
+            border-radius: 4px;
+            animation: block-bounce 1.8s ease-in-out infinite;
+            animation-delay: calc(var(--i) * 0.15s);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        
+        .block-block:nth-child(odd) {
+            background: linear-gradient(to bottom, #1d4ed8, #3b82f6);
+        }
+        
+        .block-block:nth-child(3) {
+            width: 14px;
+            height: 45px;
+        }
+        
+        @keyframes block-bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-15px); }
+        }
+        
+        .loading-text {
+            margin-top: 30px;
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            border-radius: 2px;
+            animation: progress-shift 2s ease-in-out infinite;
+        }
+        
+        @keyframes progress-shift {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(200%); }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// =======================
+// Error Handling System
+// =======================
+function showError(message, options = {}) {
+    const {
+        title = 'System Error',
+        duration = 5000,
+        showNotification = true,
+        showToast = false
+    } = options;
+
+    console.error('ByteWard Error:', message);
+    
+    // Show notification
+    if (showNotification && window.UI && window.UI.Notification) {
+        window.UI.Notification.error(title, message, duration);
+    }
+    
+    // Show toast
+    if (showToast && window.UI && window.UI.Toast) {
+        window.UI.Toast.error(message, { duration });
+    }
+    
+    // Legacy fallback (only if no other system works)
+    if (!showNotification && !showToast) {
+        let el = document.getElementById('systemError');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'systemError';
+            el.className = 'system-error';
+            document.body.appendChild(el);
+            injectErrorCSS();
+        }
+        
+        el.textContent = `ByteWard Error: ${message}`;
+        el.style.display = 'block';
+        
+        setTimeout(() => {
+            el.style.display = 'none';
+        }, duration);
+    }
+}
+
+function injectErrorCSS() {
+    if (document.querySelector('#error-css')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'error-css';
+    style.textContent = `
+        .system-error {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border-left: 4px solid #dc2626;
+            z-index: 10000;
+            max-width: 420px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-family: system-ui, -apple-system, sans-serif;
+            display: none;
+            backdrop-filter: blur(10px);
+            background: rgba(254, 226, 226, 0.95);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// =======================
+// Utility Functions
+// =======================
+function generateDefaultAvatar(seed) {
+    const defaultSeed = seed || 'user' + Date.now();
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(defaultSeed)}&backgroundColor=6b7280`;
 }
 
 // =======================
@@ -878,13 +2550,13 @@ function updateSaveButtonState() {
 function injectProfileCSS() {
     if (document.querySelector('link[href*="profile.css"]')) return;
 
-    var cssPath = window.ByteWard ? 
+    const cssPath = window.ByteWard ? 
         window.ByteWard.buildFullPath(window.ByteWard.APP_CONFIG.ASSETS.profileCSS) : 
         '/assets/css/profile.css';
-      
+    
     console.log('🎨 Memuat profile CSS dari:', cssPath);
 
-    var link = document.createElement('link');
+    const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = cssPath;
     link.id = 'profile-css';
@@ -894,212 +2566,181 @@ function injectProfileCSS() {
         injectFallbackCSS();
     };
 
-    link.onload = function() { console.log('✅ Profile CSS berhasil dimuat'); };
+    link.onload = function() { 
+        console.log('✅ Profile CSS berhasil dimuat'); 
+        
+        // Add additional profile-specific styles
+        const additionalStyles = document.createElement('style');
+        additionalStyles.textContent = `
+            .profile-button-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            }
+            
+            .profile-button {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                border: none;
+                background: white;
+                cursor: pointer;
+                padding: 0;
+                position: relative;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                transition: all 0.3s ease;
+                overflow: hidden;
+            }
+            
+            .profile-button:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            }
+            
+            .profile-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+            }
+            
+            .profile-indicator {
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                width: 20px;
+                height: 20px;
+                background: #ef4444;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: bold;
+                animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+            
+            /* Mobile styles */
+            @media (max-width: 768px) {
+                .profile-button-container {
+                    top: 10px;
+                    right: 10px;
+                }
+                
+                .profile-button {
+                    width: 40px;
+                    height: 40px;
+                }
+            }
+        `;
+        document.head.appendChild(additionalStyles);
+    };
     document.head.appendChild(link);
 }
 
 function injectFallbackCSS() {
     if (document.querySelector('#profile-fallback-css')) return;
 
-    var link = document.createElement('link');
+    const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = '/assets/css/profile-fallback.css';
     link.id = 'profile-fallback-css';
-      
-    link.onerror = function() { console.warn('Fallback CSS juga gagal dimuat'); };
+    
+    link.onerror = function() { 
+        console.warn('Fallback CSS juga gagal dimuat');
+        
+        // Ultimate fallback
+        const style = document.createElement('style');
+        style.textContent = `
+            .profile-button-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            }
+            
+            .profile-button {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                border: 2px solid #3b82f6;
+                background: white;
+                cursor: pointer;
+                padding: 0;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            
+            .profile-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+            }
+        `;
+        document.head.appendChild(style);
+    };
+    
     document.head.appendChild(link);
 }
 
 // =======================
-// Loading System
+// Initialization System
 // =======================
-function showAuthLoading(text) {
-    text = text || 'Memverifikasi sesi login…';
-      
-    var el = document.getElementById('loadingIndicator');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'loadingIndicator';
-        el.className = 'loading-indicator';
-          
-        el.innerHTML = '' +
-            '<div class="block-loader">' +
-                '<div class="block-block" style="--i:0"></div>' +
-                '<div class="block-block" style="--i:1"></div>' +
-                '<div class="block-block" style="--i:2"></div>' +
-                '<div class="block-block" style="--i:3"></div>' +
-                '<div class="block-block" style="--i:4"></div>' +
-            '</div>' +
-            '<div class="loading-text">' + text + '</div>' +
-            '<div class="progress-bar">' +
-                '<div class="progress-fill"></div>' +
-            '</div>';
-          
-        document.body.appendChild(el);
-        injectLoadingCSS();
-    }
-
-    el.style.display = 'flex';
-    var textEl = el.querySelector('.loading-text');
-    if (textEl) textEl.textContent = text;
-    console.log('[BYTEWARD]', text);
-}
-
-function hideAuthLoading() {
-    var el = document.getElementById('loadingIndicator');
-    if (!el) return;
-      
-    el.style.opacity = '0';
-    setTimeout(function() { el.style.display = 'none'; }, 300);
-}
-
-function injectLoadingCSS() {
-    if (document.querySelector('#loading-css')) return;
-      
-    var style = document.createElement('style');
-    style.id = 'loading-css';
-    style.textContent = '' +
-        '.loading-indicator {' +
-            'position: fixed;' +
-            'top: 0; left: 0;' +
-            'width: 100%; height: 100%;' +
-            'background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);' +
-            'display: none;' +
-            'justify-content: center;' +
-            'align-items: center;' +
-            'z-index: 10000;' +
-            'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;' +
-            'flex-direction: column;' +
-            'backdrop-filter: blur(4px);' +
-        '}' +
-        '.block-loader {' +
-            'display: flex;' +
-            'align-items: center;' +
-            'justify-content: center;' +
-            'gap: 8px;' +
-            'height: 60px;' +
-        '}' +
-        '.block-block {' +
-            'width: 12px;' +
-            'height: 40px;' +
-            'background: linear-gradient(to bottom, #3b82f6, #2563eb);' +
-            'border-radius: 4px;' +
-            'animation: block-bounce 1.8s ease-in-out infinite;' +
-            'animation-delay: calc(var(--i) * 0.15s);' +
-            'box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);' +
-        '}' +
-        '.block-block:nth-child(odd) {' +
-            'background: linear-gradient(to bottom, #1d4ed8, #3b82f6);' +
-        '}' +
-        '.block-block:nth-child(3) {' +
-            'width: 14px; height: 45px;' +
-        '}' +
-        '@keyframes block-bounce {' +
-            '0%, 60%, 100% { transform: translateY(0); }' +
-            '30% { transform: translateY(-15px); }' +
-        '}' +
-        '.loading-text {' +
-            'margin-top: 30px;' +
-            'color: #1e293b;' +
-            'font-size: 16px;' +
-            'font-weight: 500;' +
-            'text-align: center;' +
-            'max-width: 300px;' +
-            'line-height: 1.5;' +
-        '}' +
-        '.progress-bar {' +
-            'width: 200px;' +
-            'height: 4px;' +
-            'background: #e2e8f0;' +
-            'border-radius: 2px;' +
-            'margin-top: 20px;' +
-            'overflow: hidden;' +
-        '}' +
-        '.progress-fill {' +
-            'width: 40%;' +
-            'height: 100%;' +
-            'background: linear-gradient(90deg, #3b82f6, #2563eb);' +
-            'border-radius: 2px;' +
-            'animation: progress-shift 2s ease-in-out infinite;' +
-        '}' +
-        '@keyframes progress-shift {' +
-            '0%, 100% { transform: translateX(-100%); }' +
-            '50% { transform: translateX(200%); }' +
-        '}';
-    document.head.appendChild(style);
-}
-
-// =======================
-// Error Handling
-// =======================
-function showError(message) {
-    if (window.UI && window.UI.Notification && window.UI.Notification.error) {
-        window.UI.Notification.error('System Error', message);
-    }
-      
-    // Legacy fallback
-    var el = document.getElementById('systemError') || (function() {
-        var div = document.createElement('div');
-        div.id = 'systemError';
-        div.className = 'system-error';
-        document.body.appendChild(div);
-        injectErrorCSS();
-        return div;
-    })();
-      
-    el.textContent = 'ByteWard Error: ' + message;
-    el.style.display = 'block';
-    setTimeout(function() { el.style.display = 'none'; }, 5000);
-}
-
-function injectErrorCSS() {
-    if (document.querySelector('#error-css')) return;
-      
-    var style = document.createElement('style');
-    style.id = 'error-css';
-    style.textContent = '' +
-        '.system-error {' +
-            'position: fixed;' +
-            'top: 20px; right: 20px;' +
-            'background: #fee2e2;' +
-            'color: #dc2626;' +
-            'padding: 15px 20px;' +
-            'border-radius: 8px;' +
-            'border-left: 4px solid #dc2626;' +
-            'z-index: 10000;' +
-            'max-width: 420px;' +
-            'box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);' +
-            'font-family: system-ui, -apple-system, sans-serif;' +
-            'display: none;' +
-        '}';
-    document.head.appendChild(style);
-}
-
-// =======================
-// Utility Functions
-// =======================
-// Fungsi global untuk generate avatar default (DiceBear)
-function generateDefaultAvatar(seed) {
-    const defaultSeed = seed || 'user' + Date.now();
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(defaultSeed)}&backgroundColor=6b7280`;
-}
-
 function initializeUISystem() {
-    console.log('🚀 Initializing UI System v' + UI_CONFIG.version);
-      
-    // Inject required CSS
-    injectProfileCSS();
-      
-    // Initialize notification system
-    var notificationManager = new NotificationManager();
-    window.UI.Notification = notificationManager;
-      
-    // Create profile button if user is logged in
-    if (window.Auth && window.Auth.currentUser) {
-        setTimeout(function() { createProfileButton(); }, 1000);
+    console.log(`🚀 Initializing UI System v${UI_CONFIG.version}...`);
+    
+    try {
+        // Inject required CSS
+        injectProfileCSS();
+        
+        // Initialize systems
+        const notificationManager = new EnhancedNotificationManager();
+        const modalSystem = new ModalSystem();
+        const toastSystem = new ToastSystem();
+        
+        // Attach to window object
+        window.UI.Notification = notificationManager;
+        window.UI.Modal = modalSystem;
+        window.UI.Toast = toastSystem;
+        
+        // Create profile button if user is logged in
+        if (window.Auth && window.Auth.currentUser) {
+            setTimeout(() => { 
+                createProfileButton(); 
+                console.log('✅ Profile button created');
+            }, 1000);
+        }
+        
+        // Setup global error handler
+        window.addEventListener('error', (event) => {
+            showError(event.message, { showNotification: true });
+        });
+        
+        // Setup unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', (event) => {
+            showError(event.reason?.message || 'Unhandled Promise Rejection', { showNotification: true });
+        });
+        
+        console.log('✅ UI System successfully initialized with:');
+        console.log('   - Notification System ✓');
+        console.log('   - Modal System ✓');
+        console.log('   - Toast System ✓');
+        console.log('   - Profile System ✓');
+        console.log('   - Loading System ✓');
+        console.log('   - Error System ✓');
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize UI System:', error);
+        showError(`UI System initialization failed: ${error.message}`, { showNotification: false });
     }
-      
-    console.log('✅ UI System initialized successfully');
 }
 
 // =======================
@@ -1109,36 +2750,38 @@ window.UI = window.UI || {};
 Object.assign(window.UI, {
     // Configuration
     config: UI_CONFIG,
-      
+    
     // Profile System
-    createProfileButton: createProfileButton,
-    updateProfileButton: updateProfileButton,
-    createProfilePanel: createProfilePanel,
-    initializeProfilePanel: initializeProfilePanel,
-    populateAvatarOptions: populateAvatarOptions,
-    selectAvatar: selectAvatar,
-    handleAvatarUpload: handleAvatarUpload,
-    checkForChanges: checkForChanges,
-    showProfilePanel: showProfilePanel,
-    hideProfilePanel: hideProfilePanel,
-    showStatus: showStatus,
-    saveProfile: saveProfile,
-    updateSaveButtonState: updateSaveButtonState,
-      
+    createProfileButton,
+    updateProfileButton,
+    createProfilePanel,
+    initializeProfilePanel,
+    populateAvatarOptions,
+    selectAvatar,
+    handleAvatarUpload,
+    checkForChanges,
+    showProfilePanel,
+    hideProfilePanel,
+    showStatus,
+    saveProfile,
+    updateSaveButtonState,
+    
     // CSS Management
-    injectProfileCSS: injectProfileCSS,
-    injectFallbackCSS: injectFallbackCSS,
-      
+    injectProfileCSS,
+    injectFallbackCSS,
+    
     // Loading System
-    showAuthLoading: showAuthLoading,
-    hideAuthLoading: hideAuthLoading,
-      
+    showAuthLoading,
+    hideAuthLoading,
+    injectLoadingCSS,
+    
     // Error Handling
-    showError: showError,
-      
+    showError,
+    injectErrorCSS,
+    
     // Utility
-    generateDefaultAvatar: generateDefaultAvatar,
-      
+    generateDefaultAvatar,
+    
     // Initialization
     initialize: initializeUISystem
 });
@@ -1150,4 +2793,14 @@ if (document.readyState === 'loading') {
     setTimeout(initializeUISystem, 100);
 }
 
-console.log('🎨 UI Module v0.2.0 - Advanced UI System Ready');
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        UI: window.UI,
+        Notification: window.UI.Notification,
+        Modal: window.UI.Modal,
+        Toast: window.UI.Toast
+    };
+}
+
+console.log(`🎨 UI Module v${UI_CONFIG.version} - Comprehensive UI System Ready`);
