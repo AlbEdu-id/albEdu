@@ -79,7 +79,7 @@ class HyperOSNotification {
         // Create link element
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = 'asset/css/notification.css';
+        link.href = 'assets/css/notification.css';
         link.id = 'hyperos-notification-css';
         
         // Add to document head
