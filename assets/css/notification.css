@@ -1,397 +1,367 @@
-/* ======================= */
-/* Notification System     */
-/* ======================= */
+/* ========================
+   HYPEROS NOTIFICATION SYSTEM
+   ======================== */
 
-.notification-container {
+:root {
+    /* Mobile Theme */
+    --bg-dark: #000;
+    --notif-light: rgba(255, 255, 255, 0.94);
+    --fluid-curve: cubic-bezier(0.2, 1, 0.2, 1);
+    
+    /* Desktop Premium Light Theme */
+    --desktop-bg-light: rgba(255, 255, 255, 0.95);
+    --desktop-text-light: #1d1d1f;
+    --desktop-border-light: rgba(0, 0, 0, 0.08);
+    --desktop-track-light: rgba(0, 0, 0, 0.06);
+    --desktop-subtext-light: rgba(60, 60, 67, 0.6);
+}
+
+/* Notification Container */
+.hyperos-notification-container {
     position: fixed;
-    z-index: 100000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    inset: 0;
     pointer-events: none;
+    z-index: 10000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Desktop - Sidebar WhatsApp Style */
-@media (min-width: 768px) {
-    .notification-container {
-        top: 20px;
-        right: 20px;
-        width: 380px;
-        align-items: flex-end;
-    }
-}
-
-/* Mobile - Toast HyperOS Style */
-@media (max-width: 767px) {
-    .notification-container {
-        bottom: 80px;
-        left: 0;
-        width: 100%;
-        align-items: center;
-    }
-}
-
-/* Base Notification */
-.notification {
-    position: relative;
-    margin: 8px 0;
-    pointer-events: auto;
-    transform-origin: center;
-    will-change: transform, opacity, width, height;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 6px 15px rgba(0, 0, 0, 0.07);
-    overflow: hidden;
-    border-radius: 16px;
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Desktop Specific */
-@media (min-width: 768px) {
-    .notification {
-        width: 380px;
-        border-radius: 12px;
-    }
-}
-
-/* Mobile Specific */
-@media (max-width: 767px) {
-    .notification {
-        width: 90%;
-        max-width: 400px;
-        border-radius: 16px;
-    }
-}
-
-/* Notification Types */
-.notification-success {
-    border-left: 4px solid #10b981;
-    background: rgba(16, 185, 129, 0.05);
-}
-
-.notification-error {
-    border-left: 4px solid #ef4444;
-    background: rgba(239, 68, 68, 0.05);
-}
-
-.notification-warning {
-    border-left: 4px solid #f59e0b;
-    background: rgba(245, 158, 11, 0.05);
-}
-
-.notification-info {
-    border-left: 4px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
-}
-
-/* Notification Content */
-.notification-content {
-    display: flex;
-    align-items: center;
-    padding: 16px;
-    min-height: 60px;
-    gap: 12px;
-}
-
-/* Icon Container */
-.notification-icon {
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.notification-success .notification-icon {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-}
-
-.notification-error .notification-icon {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-}
-
-.notification-warning .notification-icon {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-}
-
-.notification-info .notification-icon {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-}
-
-/* Text Content */
-.notification-text {
-    flex: 1;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    line-height: 1.4;
-}
-
-.notification-title {
-    font-weight: 600;
-    font-size: 14px;
-    color: #1f2937;
-    margin-bottom: 4px;
-}
-
-.notification-message {
-    font-size: 13px;
-    color: #6b7280;
-}
-
-/* Close Button */
-.notification-close {
+/* Mobile Mode */
+.mobile-mode.hyperos-notification-container .hyperos-notification {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.05);
-    border: none;
+    left: 50%;
+    top: 0;
+    background: var(--notif-light);
+    backdrop-filter: blur(40px) saturate(180%);
     display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0.5;
-    transition: opacity 0.2s, background 0.2s;
-    font-size: 14px;
-    color: #6b7280;
+    pointer-events: auto;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    transition: transform 0.8s var(--fluid-curve), 
+                width 0.8s var(--fluid-curve), 
+                height 0.8s var(--fluid-curve), 
+                border-radius 0.8s var(--fluid-curve), 
+                opacity 0.5s ease;
 }
 
-.notification-close:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
+.mobile-mode.hyperos-notification-container .hyperos-notification.spawn { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 20px; 
+    opacity: 0; 
+    transform: translate(-50%, -120px) scale(0.3); 
 }
 
-/* Progress Bar */
-.notification-progress {
+.mobile-mode.hyperos-notification-container .hyperos-notification.active { 
+    width: 370px; 
+    max-width: 90vw;
+    height: 78px; 
+    border-radius: 30px; 
+    opacity: 1; 
+    transform: translate(-50%, 25px); 
+    z-index: 100; 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.layer-1 { 
+    width: 330px; 
+    max-width: 85vw;
+    height: 68px; 
+    border-radius: 26px; 
+    opacity: 0.6; 
+    transform: translate(-50%, 50px) scale(0.95); 
+    z-index: 90; 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.layer-2 { 
+    width: 290px; 
+    max-width: 80vw;
+    height: 58px; 
+    border-radius: 22px; 
+    opacity: 0.3; 
+    transform: translate(-50%, 70px) scale(0.9); 
+    z-index: 80; 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.exit { 
+    transform: translate(-50%, -160px) scale(0); 
+    opacity: 0; 
+}
+
+/* Desktop Mode */
+.desktop-mode.hyperos-notification-container .hyperos-notification {
+    position: absolute;
+    right: 40px;
+    bottom: 40px;
+    width: 390px;
+    max-width: 90vw;
+    height: 145px;
+    border-radius: 28px;
+    background: var(--desktop-bg-light);
+    border: 1px solid var(--desktop-border-light);
+    color: var(--desktop-text-light);
+    backdrop-filter: blur(35px) saturate(150%);
+    display: flex;
+    align-items: center;
+    pointer-events: auto;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.1), 0 10px 25px rgba(0,0,0,0.06);
+    transition: transform 0.7s cubic-bezier(0.25, 1.4, 0.35, 1), opacity 0.5s ease;
+    padding-right: 44px;
+    padding-left: 6px;
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification-content { 
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.spawn { 
+    transform: translateX(120%); 
+    opacity: 0; 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.active { 
+    transform: translateY(var(--y-offset)); 
+    opacity: 1; 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.exit { 
+    transform: translateX(120%) translateY(var(--y-offset)); 
+    opacity: 0; 
+}
+
+/* Progress Bar Styles */
+/* Mobile Progress - Horizontal */
+.mobile-mode.hyperos-notification-container .hyperos-progress-track {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     height: 3px;
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0,0,0,0.05);
     overflow: hidden;
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
 }
 
-.notification-progress-bar {
-    height: 100%;
-    width: 100%;
+.mobile-mode.hyperos-notification-container .hyperos-progress-bar { 
+    height: 100%; 
+    width: 100%; 
     transform-origin: left;
     transform: scaleX(1);
+    filter: blur(0.5px);
     transition: transform linear;
 }
 
-.notification-success .notification-progress-bar {
-    background: linear-gradient(90deg, #10b981, #34d399);
+/* Desktop Progress - Vertical Liquid */
+.desktop-mode.hyperos-notification-container .hyperos-progress-track {
+    position: absolute;
+    top: 30px;
+    bottom: 30px;
+    right: 18px;
+    width: 12px;
+    height: auto;
+    background: var(--desktop-track-light);
+    border-radius: 7px;
+    overflow: hidden;
 }
 
-.notification-error .notification-progress-bar {
-    background: linear-gradient(90deg, #ef4444, #f87171);
+.desktop-mode.hyperos-notification-container .hyperos-progress-bar {
+    width: 100%;
+    height: 100%;
+    transform-origin: bottom;
+    transform: scaleY(1);
+    transition: transform linear;
 }
 
-.notification-warning .notification-progress-bar {
-    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+/* Universal Content */
+.hyperos-notification-icon { 
+    min-width: 70px; 
+    display: flex; 
+    justify-content: center; 
 }
 
-.notification-info .notification-progress-bar {
-    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+.desktop-mode.hyperos-notification-container .hyperos-notification-icon {
+    min-width: 80px;
+    padding-left: 8px;
 }
 
-/* Stacked Notifications */
-.notification.stacked {
-    transform: scale(0.95) translateY(10px);
-    opacity: 0.7;
-    filter: brightness(0.95);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+.hyperos-icon-blob {
+    width: 54px;
+    height: 54px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
 }
 
-.notification.stacked:nth-child(5) {
-    opacity: 0.3;
-    transform: scale(0.9) translateY(20px);
-    filter: brightness(0.9);
+.desktop-mode.hyperos-notification-container .hyperos-icon-blob {
+    width: 68px;
+    height: 68px;
+    border-radius: 20px;
 }
 
-/* ======================= */
-/* Animations              */
-/* ======================= */
-
-/* Initial State - Desktop */
-@media (min-width: 768px) {
-    .notification-enter {
-        animation: desktopSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
+.hyperos-notification-text { 
+    flex: 1; 
+    padding: 0 12px; 
 }
 
-/* Initial State - Mobile */
-@media (max-width: 767px) {
-    .notification-enter {
-        animation: mobileToastIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
+.desktop-mode.hyperos-notification-container .hyperos-notification-text {
+    padding-right: 32px;
 }
 
-/* Exit Animation */
-.notification-exit {
-    animation: notificationOut 0.4s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+/* Typography */
+.hyperos-text-small { 
+    font-size: 11px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    margin-bottom: 2px; 
 }
 
-/* Desktop Animation - WhatsApp Style */
-@keyframes desktopSlideIn {
-    0% {
-        transform: translateX(100%) scale(0.3);
-        opacity: 0;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-    }
-    40% {
-        transform: translateX(0) scale(0.95);
-        opacity: 1;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-    }
-    70% {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-    }
-    100% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-        width: 380px;
-        height: auto;
-        border-radius: 12px;
-    }
+.desktop-mode.hyperos-notification-container .hyperos-text-small {
+    font-size: 13px;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
 }
 
-/* Mobile Animation - HyperOS Style */
-@keyframes mobileToastIn {
-    0% {
-        transform: translateY(100px) scale(0.3);
-        opacity: 0;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-    }
-    40% {
-        transform: translateY(0) scale(0.95);
-        opacity: 1;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-    }
-    70% {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-    }
-    100% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-        width: 90%;
-        max-width: 400px;
-        height: auto;
-        border-radius: 16px;
-    }
+.hyperos-text-main { 
+    font-size: 15px; 
+    font-weight: 600; 
+    line-height: 1.3; 
 }
 
-/* Exit Animation */
-@keyframes notificationOut {
-    0% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(0.8) translateY(10px);
-        opacity: 0.5;
-        width: 100%;
-    }
-    100% {
-        transform: scale(0.6) translateY(30px);
-        opacity: 0;
-        width: 0;
-        height: 0;
-        margin: 0;
-        padding: 0;
-    }
+.desktop-mode.hyperos-notification-container .hyperos-text-main {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.4;
 }
 
-/* Progress Bar Animation */
-@keyframes progressShrink {
-    from {
-        transform: scaleX(1);
-    }
-    to {
-        transform: scaleX(0);
-    }
+/* Mobile Colors */
+.mobile-mode.hyperos-notification-container .hyperos-text-small { 
+    color: rgba(0,0,0,0.5); 
 }
 
-/* Hover Effects */
-@media (hover: hover) {
-    .notification:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(0, 0, 0, 0.08);
+.mobile-mode.hyperos-notification-container .hyperos-text-main { 
+    color: #000; 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification:not(.active) .hyperos-notification-text { 
+    opacity: 0; 
+}
+
+/* Desktop Colors */
+.desktop-mode.hyperos-notification-container .hyperos-text-small { 
+    color: var(--desktop-subtext-light); 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-text-main { 
+    color: var(--desktop-text-light); 
+}
+
+/* Desktop Content Animation */
+.desktop-mode.hyperos-notification-container .hyperos-stagger {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: 0.6s var(--fluid-curve);
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.active .hyperos-stagger:nth-child(1) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.active .hyperos-stagger:nth-child(2) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.2s;
+}
+
+/* Notification Types */
+/* Success */
+.hyperos-notification.success .hyperos-icon-blob { 
+    background: #34c759; 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.success .hyperos-progress-bar { 
+    background: linear-gradient(to top, rgba(52, 199, 89, 0.2), #34c759); 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.success .hyperos-progress-bar { 
+    background: #34c759; 
+}
+
+/* Error */
+.hyperos-notification.error .hyperos-icon-blob { 
+    background: #ff3b30; 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.error .hyperos-progress-bar { 
+    background: linear-gradient(to top, rgba(255, 59, 48, 0.2), #ff3b30); 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.error .hyperos-progress-bar { 
+    background: #ff3b30; 
+}
+
+/* Warning */
+.hyperos-notification.warning .hyperos-icon-blob { 
+    background: #ff9500; 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.warning .hyperos-progress-bar { 
+    background: linear-gradient(to top, rgba(255, 149, 0, 0.2), #ff9500); 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.warning .hyperos-progress-bar { 
+    background: #ff9500; 
+}
+
+/* Info */
+.hyperos-notification.info .hyperos-icon-blob { 
+    background: #007aff; 
+}
+
+.desktop-mode.hyperos-notification-container .hyperos-notification.info .hyperos-progress-bar { 
+    background: linear-gradient(to top, rgba(0, 122, 255, 0.2), #007aff); 
+}
+
+.mobile-mode.hyperos-notification-container .hyperos-notification.info .hyperos-progress-bar { 
+    background: #007aff; 
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+    .desktop-mode.hyperos-notification-container {
+        display: none;
     }
     
-    .notification:hover .notification-progress-bar {
-        animation-play-state: paused;
+    .mobile-mode.hyperos-notification-container {
+        display: block;
     }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .notification {
-        background: rgba(30, 41, 59, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+@media (min-width: 769px) {
+    .mobile-mode.hyperos-notification-container {
+        display: none;
     }
     
-    .notification-title {
-        color: #f1f5f9;
-    }
-    
-    .notification-message {
-        color: #94a3b8;
-    }
-    
-    .notification-close {
-        background: rgba(255, 255, 255, 0.1);
-        color: #94a3b8;
-    }
-    
-    .notification-close:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-    
-    .notification-progress {
-        background: rgba(255, 255, 255, 0.1);
+    .desktop-mode.hyperos-notification-container {
+        display: block;
     }
 }
 
-/* High DPI/Retina Display Optimizations */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .notification {
-        border-width: 0.5px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    }
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-    .notification-enter,
-    .notification-exit {
-        animation: none;
-        transition: opacity 0.3s ease;
+/* Touch Device Optimization */
+@media (hover: none) and (pointer: coarse) {
+    .desktop-mode.hyperos-notification-container .hyperos-notification {
+        padding-right: 24px;
+        width: 350px;
     }
     
-    .notification-progress-bar {
-        transition: none;
+    .desktop-mode.hyperos-notification-container .hyperos-icon-blob {
+        width: 56px;
+        height: 56px;
     }
 }
