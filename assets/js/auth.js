@@ -1,5 +1,5 @@
-// ByteWard Auth Module v0.5.0 - Production Ready Edition
-console.log('🔐 Memuat Auth Module v0.5.0 (Production)...');
+// ByteWard Auth Module v0.5.1 - FIXED (No Infinite Loop)
+console.log('🔐 Memuat Auth Module v0.5.1 (Fixed)...');
 
 let currentUser = null;
 let userRole = null;
@@ -43,6 +43,9 @@ function checkProfileCompleteness(data) {
     return hasName && hasAvatar;
 }
 
+// ============================================
+// PERBAIKAN UTAMA: fetchUserData
+// ============================================
 async function fetchUserData(userId) {
     console.log('📡 Mengambil data user dari Firestore...');
 
@@ -58,23 +61,20 @@ async function fetchUserData(userId) {
         profileListener = ref.onSnapshot(async (snap) => {
             try {
                 if (snap.exists) {
-                    userData = snap.data();
+                    const data = snap.data();
                     
-                    // Production Safety: Sanitize data
-                    // Pastikan field penting ada, jika tidak beri default
-                    if (!userData.nama) userData.nama = '';
-                    if (!userData.foto_profil) userData.foto_profil = generateDefaultAvatar(userData.email || userId);
-                    if (!userData.peran) userData.peran = 'siswa';
+                    // Production Safety: Sanitasi data (Jangan melakukan update di sini)
+                    // Kita hanya menyiapkan data lokal untuk digunakan UI
+                    if (!data.nama) data.nama = '';
+                    if (!data.foto_profil) data.foto_profil = generateDefaultAvatar(data.email || userId);
+                    if (!data.peran) data.peran = 'siswa';
                     
-                    // Hitung ulang profilLengkap jika belum ada atau mismatch
-                    // Ini mencegah stuck state jika rules baru diterapkan
-                    const calculatedComplete = checkProfileCompleteness(userData);
-                    if (userData.profilLengkap !== calculatedComplete) {
-                        console.log('🔧 Menyinkronkan status profilLengkap...');
-                        await ref.update({ profilLengkap: calculatedComplete });
-                        userData.profilLengkap = calculatedComplete;
-                    }
-
+                    // PERUBAHAN LOGIKA: 
+                    // HAPUS blok if (data.profilLengkap !== calculatedComplete) yang melakukan .update()
+                    // Kita PERCAYAI Firestore Rules yang sudah menangani validasi tersebut.
+                    // Infinite Loop terjadi karena JS melakukan update yang memicu listener ini.
+                    
+                    userData = data;
                     userRole = userData.peran || 'siswa';
 
                     if (!userProfileState) {
@@ -88,6 +88,8 @@ async function fetchUserData(userId) {
                             autoCloseTriggered: false
                         };
                     }
+                    
+                    // Update state lokal
                     userProfileState.isProfileComplete = userData.profilLengkap;
 
                     if (!resolved) {
@@ -95,6 +97,7 @@ async function fetchUserData(userId) {
                         resolve(userData);
                     }
 
+                    // Update UI jika ada
                     if (currentUser && window.UI) {
                         window.UI.updateProfileButton();
                         if (document.getElementById('profilePanel')) {
@@ -137,7 +140,7 @@ async function createUserData(userId) {
         email: user.email,
         foto_profil: generateDefaultAvatar(avatarSeed),
         peran: 'siswa',
-        profilLengkap: false, // Awalnya false
+        profilLengkap: false, 
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -167,7 +170,6 @@ async function authLogin() {
     } catch (error) {
         console.error('❌ Error login:', error);
         
-        // Handle error spesifik
         let errorMsg = error.message;
         if (error.code === 'auth/popup-closed-by-user') {
             errorMsg = 'Login dibatalkan oleh pengguna.';
@@ -215,14 +217,13 @@ async function authLogout() {
 }
 
 async function initializeSystem() {
-    // Mencegah inisialisasi ganda
     if (isSystemInitialized) {
         console.log('⚠️ Auth System sudah diinisialisasi.');
         return;
     }
     isSystemInitialized = true;
 
-    console.log('⚙️ Menginisialisasi ByteWard v0.5.0...');
+    console.log('⚙️ Menginisialisasi ByteWard v0.5.1...');
 
     if (typeof firebase === 'undefined' || !firebase.auth) {
         console.error('❌ Firebase tidak tersedia');
@@ -293,7 +294,7 @@ async function initializeSystem() {
 }
 
 function debugByteWard() {
-    console.log('=== ByteWard Debug Info v0.5.0 ===');
+    console.log('=== ByteWard Debug Info v0.5.1 ===');
     console.log('Current User:', currentUser);
     console.log('User Role:', userRole);
     console.log('User Data:', userData);
@@ -334,4 +335,4 @@ Object.defineProperties(window.Auth, {
     authReady: { get: () => authReady, set: (value) => { authReady = value; } }
 });
 
-console.log('🔐 Auth Module v0.5.0 - Production Ready.');
+console.log('🔐 Auth Module v0.5.1 - Fixed (No Loop).');
