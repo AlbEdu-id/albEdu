@@ -1,103 +1,48 @@
-// ByteWard Auth Module v0.4.0 - Compatible with notification.js
-console.log('🔐 Memuat Auth Module v0.4.0...');
+// ByteWard Auth Module v0.5.0 - Production Ready Edition
+console.log('🔐 Memuat Auth Module v0.5.0 (Production)...');
 
-// Global State
 let currentUser = null;
 let userRole = null;
 let userData = null;
 let authReady = false;
 let userProfileState = null;
 let profileListener = null;
-let redirectInProgress = false;
+let isSystemInitialized = false;
 
-// Fungsi untuk menampilkan notifikasi
-// Priority: 1. HyperOS (Jika ada), 2. notification.js (window.notify)
 function showNotification(type, title, message, duration) {
     if (window.HyperOS && window.HyperOS.Notifications) {
         return window.HyperOS.Notifications[type](title, message, duration);
     }
-    
-    // Prioritaskan notification.js
     if (window.notify && window.notify[type]) {
         return window.notify[type](title, message, duration);
     }
-    
-    // Fallback ke console jika belum siap
     console[type === 'error' ? 'error' : 'log'](`[${type.toUpperCase()}] ${title}: ${message}`);
     return null;
 }
 
-// Fungsi global untuk generate avatar default (DiceBear)
 function generateDefaultAvatar(seed) {
     const defaultSeed = seed || 'user' + Date.now();
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(defaultSeed)}&backgroundColor=6b7280`;
 }
 
-// Avatar constants
 const PROFILE_AVATARS = [
-    {
-        id: 'male1',
-        name: 'Male Avatar 1',
-        url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=male1&backgroundColor=5b6af0&radius=50',
-        color: '#5b6af0'
-    },
-    {
-        id: 'female1',
-        name: 'Female Avatar 1',
-        url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=female1&backgroundColor=9d4edd&radius=50',
-        color: '#9d4edd'
-    },
-    {
-        id: 'robot',
-        name: 'Robot',
-        url: 'https://api.dicebear.com/7.x/bottts/svg?seed=robot&backgroundColor=10b981&radius=50',
-        color: '#10b981'
-    },
-    {
-        id: 'cat',
-        name: 'Cat',
-        url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=cat&backgroundColor=f59e0b&radius=50',
-        color: '#f59e0b'
-    },
-    {
-        id: 'alien',
-        name: 'Alien',
-        url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alien&backgroundColor=8b5cf6&radius=50',
-        color: '#8b5cf6'
-    },
-    {
-        id: 'person1',
-        name: 'Person 1',
-        url: 'https://api.dicebear.com/7.x/personas/svg?seed=person1&backgroundColor=ef4444&radius=50',
-        color: '#ef4444'
-    },
-    {
-        id: 'person2',
-        name: 'Person 2',
-        url: 'https://api.dicebear.com/7.x/personas/svg?seed=person2&backgroundColor=14b8a6&radius=50',
-        color: '#14b8a6'
-    },
-    {
-        id: 'person3',
-        name: 'Person 3',
-        url: 'https://api.dicebear.com/7.x/personas/svg?seed=person3&backgroundColor=8b5cf6&radius=50',
-        color: '#8b5cf6'
-    }
+    { id: 'male1', name: 'Male Avatar 1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=male1&backgroundColor=5b6af0&radius=50', color: '#5b6af0' },
+    { id: 'female1', name: 'Female Avatar 1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=female1&backgroundColor=9d4edd&radius=50', color: '#9d4edd' },
+    { id: 'robot', name: 'Robot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=robot&backgroundColor=10b981&radius=50', color: '#10b981' },
+    { id: 'cat', name: 'Cat', url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=cat&backgroundColor=f59e0b&radius=50', color: '#f59e0b' },
+    { id: 'alien', name: 'Alien', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alien&backgroundColor=8b5cf6&radius=50', color: '#8b5cf6' },
+    { id: 'person1', name: 'Person 1', url: 'https://api.dicebear.com/7.x/personas/svg?seed=person1&backgroundColor=ef4444&radius=50', color: '#ef4444' },
+    { id: 'person2', name: 'Person 2', url: 'https://api.dicebear.com/7.x/personas/svg?seed=person2&backgroundColor=14b8a6&radius=50', color: '#14b8a6' },
+    { id: 'person3', name: 'Person 3', url: 'https://api.dicebear.com/7.x/personas/svg?seed=person3&backgroundColor=8b5cf6&radius=50', color: '#8b5cf6' }
 ];
 
-// =======================
-// Profile Completeness Check
-// =======================
 function checkProfileCompleteness(data) {
     if (!data) return false;
-    const hasName = data.nama && data.nama.trim().length > 0;
-    const hasAvatar = data.foto_profil && data.foto_profil.trim().length > 0;
+    const hasName = data.nama && typeof data.nama === 'string' && data.nama.trim().length > 0;
+    const hasAvatar = data.foto_profil && typeof data.foto_profil === 'string' && data.foto_profil.trim().length > 0;
     return hasName && hasAvatar;
 }
 
-// =======================
-// User Data Management
-// =======================
 async function fetchUserData(userId) {
     console.log('📡 Mengambil data user dari Firestore...');
 
@@ -114,6 +59,22 @@ async function fetchUserData(userId) {
             try {
                 if (snap.exists) {
                     userData = snap.data();
+                    
+                    // Production Safety: Sanitize data
+                    // Pastikan field penting ada, jika tidak beri default
+                    if (!userData.nama) userData.nama = '';
+                    if (!userData.foto_profil) userData.foto_profil = generateDefaultAvatar(userData.email || userId);
+                    if (!userData.peran) userData.peran = 'siswa';
+                    
+                    // Hitung ulang profilLengkap jika belum ada atau mismatch
+                    // Ini mencegah stuck state jika rules baru diterapkan
+                    const calculatedComplete = checkProfileCompleteness(userData);
+                    if (userData.profilLengkap !== calculatedComplete) {
+                        console.log('🔧 Menyinkronkan status profilLengkap...');
+                        await ref.update({ profilLengkap: calculatedComplete });
+                        userData.profilLengkap = calculatedComplete;
+                    }
+
                     userRole = userData.peran || 'siswa';
 
                     if (!userProfileState) {
@@ -127,14 +88,7 @@ async function fetchUserData(userId) {
                             autoCloseTriggered: false
                         };
                     }
-
-                    userProfileState.isProfileComplete = checkProfileCompleteness(userData);
-
-                    console.log('✅ Data user diperbarui:', {
-                        role: userRole,
-                        name: userData.nama,
-                        profileComplete: userProfileState.isProfileComplete
-                    });
+                    userProfileState.isProfileComplete = userData.profilLengkap;
 
                     if (!resolved) {
                         resolved = true;
@@ -143,20 +97,11 @@ async function fetchUserData(userId) {
 
                     if (currentUser && window.UI) {
                         window.UI.updateProfileButton();
-
                         if (document.getElementById('profilePanel')) {
                             const currentAvatar = document.querySelector('.current-avatar');
                             const currentName = document.querySelector('.current-name');
-
-                            if (currentAvatar) {
-                                currentAvatar.src = userData.foto_profil || generateDefaultAvatar(currentUser.email);
-                                currentAvatar.onerror = function() {
-                                    this.src = generateDefaultAvatar(currentUser.email);
-                                };
-                            }
-                            if (currentName) {
-                                currentName.textContent = userData.nama || 'Nama belum diisi';
-                            }
+                            if (currentAvatar) currentAvatar.src = userData.foto_profil;
+                            if (currentName) currentName.textContent = userData.nama || 'Nama belum diisi';
                         }
                     }
 
@@ -172,16 +117,12 @@ async function fetchUserData(userId) {
             } catch (error) {
                 console.error('Error in user data listener:', error);
                 showNotification('error', 'Kesalahan Data', 'Gagal memuat data pengguna', 5000);
-                if (!resolved) {
-                    reject(error);
-                }
+                if (!resolved) reject(error);
             }
         }, (error) => {
             console.error('Firestore listener error:', error);
             showNotification('error', 'Koneksi Gagal', 'Gagal terhubung ke database', 5000);
-            if (!resolved) {
-                reject(error);
-            }
+            if (!resolved) reject(error);
         });
     });
 }
@@ -196,20 +137,16 @@ async function createUserData(userId) {
         email: user.email,
         foto_profil: generateDefaultAvatar(avatarSeed),
         peran: 'siswa',
-        profilLengkap: false,
+        profilLengkap: false, // Awalnya false
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     await firebaseDb.collection('users').doc(userId).set(payload);
     showNotification('success', 'Profil Baru', 'Profil berhasil dibuat', 4000);
-    console.log('✅ Data user baru berhasil dibuat');
     return payload;
 }
 
-// =======================
-// Authentication Functions
-// =======================
 async function authLogin() {
     try {
         console.log('🔐 Memulai login Google...');
@@ -229,9 +166,18 @@ async function authLogin() {
         return result.user;
     } catch (error) {
         console.error('❌ Error login:', error);
-        showNotification('error', 'Login Gagal', error.message || 'Terjadi kesalahan saat login', 5000);
+        
+        // Handle error spesifik
+        let errorMsg = error.message;
+        if (error.code === 'auth/popup-closed-by-user') {
+            errorMsg = 'Login dibatalkan oleh pengguna.';
+        } else if (error.code === 'auth/popup-blocked') {
+            errorMsg = 'Popup login diblokir oleh browser. Silakan izinkan popup.';
+        }
+
+        showNotification('error', 'Login Gagal', errorMsg, 5000);
         if (window.UI) window.UI.hideAuthLoading();
-        throw new Error(error.message || 'Login Google gagal');
+        throw new Error(errorMsg);
     }
 }
 
@@ -268,25 +214,15 @@ async function authLogout() {
     }
 }
 
-// =======================
-// System Initialization
-// =======================
 async function initializeSystem() {
-    console.log('⚙️ Menginisialisasi ByteWard v0.4.0...');
-    console.log('📍 Konfigurasi:', window.ByteWard ? window.ByteWard.APP_CONFIG : 'N/A');
-    console.log('📍 Base Path:', window.ByteWard ? window.ByteWard.getBasePath() : 'N/A');
-    console.log('📍 Current Path:', window.location.pathname);
-    console.log('📍 Is Login Page:', window.ByteWard ? window.ByteWard.isLoginPage() : 'N/A');
-    console.log('📍 Within App Scope:', window.ByteWard ? window.ByteWard.isWithinAppScope() : 'N/A');
-
-    // Check for Notification Systems
-    if (window.HyperOS && window.HyperOS.Notifications) {
-        console.log('✅ HyperOS Notification System terdeteksi');
-    } else if (window.notify) {
-        console.log('✅ notification.js (window.notify) terdeteksi');
-    } else {
-        console.warn('⚠️ Tidak ada sistem notifikasi eksternal yang terdeteksi');
+    // Mencegah inisialisasi ganda
+    if (isSystemInitialized) {
+        console.log('⚠️ Auth System sudah diinisialisasi.');
+        return;
     }
+    isSystemInitialized = true;
+
+    console.log('⚙️ Menginisialisasi ByteWard v0.5.0...');
 
     if (typeof firebase === 'undefined' || !firebase.auth) {
         console.error('❌ Firebase tidak tersedia');
@@ -300,8 +236,10 @@ async function initializeSystem() {
         if (window.ByteWard) window.ByteWard.handle404Page();
     }
 
-    if (window.UI) window.UI.showAuthLoading('Mengecek status autentikasi…');
-    if (window.UI) window.UI.injectProfileCSS();
+    if (window.UI) {
+        window.UI.showAuthLoading('Mengecek status autentikasi…');
+        window.UI.injectProfileCSS();
+    }
 
     firebaseAuth.onAuthStateChanged(async (user) => {
         try {
@@ -343,11 +281,8 @@ async function initializeSystem() {
             });
 
             if (window.UI) window.UI.hideAuthLoading();
-
             let errorMsg = 'Terjadi kesalahan sistem autentikasi';
             if (err.message) errorMsg += ': ' + err.message;
-            if (err.code) errorMsg += ' (Code: ' + err.code + ')';
-
             showNotification('error', 'Auth Error', errorMsg, 5000);
         } finally {
             if (window.UI) window.UI.hideAuthLoading();
@@ -357,30 +292,16 @@ async function initializeSystem() {
     console.log('✅ Auth observer berjalan');
 }
 
-// =======================
-// Debug & Testing
-// =======================
 function debugByteWard() {
-    console.log('=== ByteWard Debug Info v0.4.0 ===');
-    console.log('Configuration:', window.ByteWard ? window.ByteWard.APP_CONFIG : 'N/A');
-    console.log('Base Path Function:', window.ByteWard ? window.ByteWard.getBasePath() : 'N/A');
-    console.log('Full Login Path:', window.ByteWard ? window.ByteWard.buildFullPath(window.ByteWard.APP_CONFIG.REDIRECT_PATHS.login) : 'N/A');
+    console.log('=== ByteWard Debug Info v0.5.0 ===');
     console.log('Current User:', currentUser);
     console.log('User Role:', userRole);
     console.log('User Data:', userData);
     console.log('Profile Complete:', userProfileState?.isProfileComplete);
-    console.log('Current Path:', window.location.pathname);
-    console.log('Is Login Page:', window.ByteWard ? window.ByteWard.isLoginPage() : 'N/A');
-    console.log('Within App Scope:', window.ByteWard ? window.ByteWard.isWithinAppScope() : 'N/A');
     console.log('Auth Ready:', authReady);
-    console.log('Redirect in Progress:', redirectInProgress);
-    console.log('Notification System:', window.HyperOS ? 'HyperOS' : window.notify ? 'notification.js' : 'None');
     console.log('==========================');
 }
 
-// =======================
-// Bootstrap System
-// =======================
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (typeof firebaseAuth === 'undefined') {
@@ -388,14 +309,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('error', 'Firebase Error', 'Firebase tidak tersedia', 5000);
             return;
         }
-
         initializeSystem();
     }, 300);
 });
 
-// =======================
-// Global Exports
-// =======================
 window.Auth = {
     authLogin,
     authLogout,
@@ -406,35 +323,15 @@ window.Auth = {
     checkProfileCompleteness,
     generateDefaultAvatar,
     PROFILE_AVATARS,
-    showNotification // Ekspos fungsi notifikasi
+    showNotification
 };
 
-// Property-based state access
 Object.defineProperties(window.Auth, {
-    currentUser: {
-        get: () => currentUser,
-        set: (value) => { currentUser = value; }
-    },
-    userRole: {
-        get: () => userRole,
-        set: (value) => { userRole = value; }
-    },
-    userData: {
-        get: () => userData,
-        set: (value) => { userData = value; }
-    },
-    profileState: {
-        get: () => userProfileState,
-        set: (value) => { userProfileState = value; }
-    },
-    authReady: {
-        get: () => authReady,
-        set: (value) => { authReady = value; }
-    },
-    redirectInProgress: {
-        get: () => redirectInProgress,
-        set: (value) => { redirectInProgress = value; }
-    }
+    currentUser: { get: () => currentUser, set: (value) => { currentUser = value; } },
+    userRole: { get: () => userRole, set: (value) => { userRole = value; } },
+    userData: { get: () => userData, set: (value) => { userData = value; } },
+    profileState: { get: () => userProfileState, set: (value) => { userProfileState = value; } },
+    authReady: { get: () => authReady, set: (value) => { authReady = value; } }
 });
 
-console.log('🔐 Auth Module v0.4.0 - Authentication siap dengan notification.js Integration.');
+console.log('🔐 Auth Module v0.5.0 - Production Ready.');
