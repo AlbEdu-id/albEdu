@@ -1,5 +1,5 @@
 /**
- * Notification System v3.0 - Core Module
+ * Notification System v3.1 - Core Module with Smart CSS Loader
  * Modern, responsive notification system
  */
 
@@ -39,6 +39,9 @@ class NotificationSystem {
     }
     
     init() {
+        // 1. Smart CSS Loader (Load otomatis dengan fallback)
+        this.loadStyles();
+
         // Create container if not exists
         if (!document.getElementById('notification-container')) {
             this.container = document.createElement('div');
@@ -59,6 +62,73 @@ class NotificationSystem {
             
             console.log('🔔 Notification System Initialized');
         }
+    }
+
+    /**
+     * Smart CSS Loader
+     * Mencoba memuat CSS dari beberapa path secara berurutan (Fallback Mechanism)
+     */
+    loadStyles() {
+        // Cek apakah CSS sudah pernah diload sebelumnya
+        if (document.getElementById('notification-styles')) return;
+
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.id = 'notification-styles';
+
+        // Daftar path yang akan dicoba secara berurutan
+        const paths = [
+            'assets/css/notification.css',      // Path utama (jika file html di root)
+            '../assets/css/notification.css'     // Path alternatif (jika js di dalam folder assets/js)
+        ];
+
+        let attemptIndex = 0;
+
+        // Fungsi internal untuk mencoba load
+        const tryLoad = (index) => {
+            link.href = paths[index];
+            console.log(`[Notify] 🔍 Mencoba memuat CSS dari: ${paths[index]}`);
+        };
+
+        // Handler jika gagal (Error 404/Path Salah)
+        link.onerror = () => {
+            attemptIndex++;
+            if (attemptIndex < paths.length) {
+                console.warn(`[Notify] ⚠️ Path sebelumnya gagal, mencoba alternatif...`);
+                tryLoad(attemptIndex); // Coba path berikutnya
+            } else {
+                console.error(`[Notify] ❌ Gagal memuat CSS dari semua path yang disediakan. Pastikan file notification.css ada.`);
+                // Fallback visual: Tampilkan inline style minimal agar tidak berantakan total jika css hilang
+                this.injectEmergencyFallback();
+            }
+        };
+
+        // Handler jika sukses
+        link.onload = () => {
+            console.log(`[Notify] ✅ CSS Berhasil dimuat dari: ${link.href}`);
+        };
+
+        // Mulai percobaan dari path pertama
+        tryLoad(0);
+        document.head.appendChild(link);
+    }
+
+    /**
+     * Fallback inline CSS jika file eksternal benar-benar hilang
+     * (Hanya untuk menjaga agar notifikasi tetap terlihat)
+     */
+    injectEmergencyFallback() {
+        if (document.getElementById('notification-emergency-style')) return;
+        const style = document.createElement('style');
+        style.id = 'notification-emergency-style';
+        style.textContent = `
+            .notification-container { position: fixed; inset: 0; pointer-events: none; z-index: 10000; }
+            .notification-item { position: absolute; right: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); pointer-events: auto; display: flex; align-items: center; gap: 10px; transition: all 0.3s; transform: translateX(120%); }
+            .notification-item.active { transform: translateX(0); }
+            .notification-icon { font-size: 20px; }
+            .notification-text { font-family: sans-serif; }
+        `;
+        document.head.appendChild(style);
     }
     
     loadFonts() {
