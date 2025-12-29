@@ -1538,10 +1538,11 @@ function initializeUISystem() {
     try {
         injectProfileCSS();
         
-        // Initialize Notification System dengan timing fix
+        // Initialize Notification System
         if (!window.Notifications) {
             window.Notifications = new window.NotificationSystemClass();
-            window.notify = window.Notifications;
+            // Note: window.notify akan di-define oleh Object.defineProperty di bawah
+            // Kita tetap assign instance ke property Notifications agar bisa diakses oleh fix wrapper
             
             // Dispatch event untuk memberitahu UI system
             requestAnimationFrame(() => {
@@ -1575,11 +1576,25 @@ Object.assign(window.UI, {
     config: UI_CONFIG, createProfileButton, updateProfileButton, createProfilePanel, initializeProfilePanel, populateAvatarOptions, selectAvatar, handleAvatarUpload, checkForChanges, showProfilePanel, hideProfilePanel, showStatus, saveProfile, updateSaveButtonState, injectProfileCSS, injectFallbackCSS, showAuthLoading, hideAuthLoading, injectLoadingCSS, showError, injectErrorCSS: injectFallbackCSS, generateDefaultAvatar, initialize: initializeUISystem
 });
 
-// PATCH: Anti-reference basi dengan getter dinamis
+// ==========================================
+// PRODUCTION FIX: Notification Timing (OPSI 2)
+// ==========================================
+// Membungkus pemanggilan window.notify dengan requestAnimationFrame
+// untuk memecah burst call menjadi multi-frame rendering.
 Object.defineProperty(window, 'notify', {
     configurable: true,
     get() {
-        return window.Notifications || {};
+        const n = window.Notifications;
+        if (!n) return {};
+
+        return {
+            success: (...args) => requestAnimationFrame(() => n.success(...args)),
+            error: (...args) => requestAnimationFrame(() => n.error(...args)),
+            warning: (...args) => requestAnimationFrame(() => n.warning(...args)),
+            info: (...args) => requestAnimationFrame(() => n.info(...args)),
+            show: (opts) => requestAnimationFrame(() => n.show(opts)),
+            clearAll: () => requestAnimationFrame(() => n.clearAll())
+        };
     }
 });
 
