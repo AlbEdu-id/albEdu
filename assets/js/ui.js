@@ -1,14 +1,14 @@
-// ByteWard UI Module v1.2.0 - Production Ready Edition with Notification Timing Fix
-console.log('🎨 Memuat UI Module v1.2.0 (Production) with Notification Timing Fix...');
+// ByteWard UI Module v1.2.1 - Refactored (Notification System Outsourced)
+console.log('🎨 Memuat UI Module v1.2.1 (Refactored) - Dependensi eksternal: notification.js');
 
 // =======================
 // Configuration
 // =======================
 const UI_CONFIG = {
-    version: '1.2.0',
+    version: '1.2.1',
     features: { 
         profileSystem: true,
-        notificationSystem: true,
+        notificationSystem: true, // Dependency on notification.js
         loadingSystem: true,
         errorSystem: true, 
         modalSystem: true,
@@ -19,363 +19,6 @@ const UI_CONFIG = {
         theme: 'light'
     }
 };
-
-// =======================
-// Notification System - WITH TIMING FIX
-// =======================
-if (!window.NotificationSystemClass) {
-    window.NotificationSystemClass = class NotificationSystem {
-        constructor() {
-            this.container = null;
-            this.queue = [];
-            this.init();
-            this.hasSpawned = new WeakSet(); // Flag internal minimal
-        }
-
-        init() {
-            this.createContainer();
-            this.injectNotificationCSS();
-            console.log('🔔 Notification System Initialized with Timing Fix');
-        }
-
-        createContainer() {
-            if (!document.getElementById('notification-container')) {
-                this.container = document.createElement('div');
-                this.container.id = 'notification-container';
-                this.container.className = 'notification-container';
-                document.body.appendChild(this.container);
-            } else {
-                this.container = document.getElementById('notification-container');
-            }
-        }
-
-        injectNotificationCSS() {
-            if (document.querySelector('#notification-css')) return;
-            const style = document.createElement('style');
-            style.id = 'notification-css';
-            style.textContent = `
-                .notification-container {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 100000;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                    pointer-events: none;
-                }
-                
-                .notification {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 16px 20px;
-                    min-width: 300px;
-                    max-width: 400px;
-                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-                    border-left: 5px solid #3b82f6;
-                    transform: translateX(120%);
-                    opacity: 0;
-                    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-                                opacity 0.3s ease;
-                    pointer-events: auto;
-                    overflow: hidden;
-                    position: relative;
-                }
-                
-                .notification.spawn {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                
-                .notification.active {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                
-                .notification.success {
-                    border-left-color: #10b981;
-                    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-                }
-                
-                .notification.error {
-                    border-left-color: #ef4444;
-                    background: linear-gradient(135deg, #fef2f2, #fee2e2);
-                }
-                
-                .notification.warning {
-                    border-left-color: #f59e0b;
-                    background: linear-gradient(135deg, #fffbeb, #fef3c7);
-                }
-                
-                .notification.info {
-                    border-left-color: #3b82f6;
-                    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-                }
-                
-                .notification-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 8px;
-                }
-                
-                .notification-title {
-                    font-weight: 600;
-                    font-size: 16px;
-                    color: #1f2937;
-                    margin: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                }
-                
-                .notification-close {
-                    background: transparent;
-                    border: none;
-                    color: #6b7280;
-                    font-size: 20px;
-                    cursor: pointer;
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                    transition: all 0.2s;
-                    padding: 0;
-                    line-height: 1;
-                    margin-left: 10px;
-                }
-                
-                .notification-close:hover {
-                    background: rgba(0, 0, 0, 0.05);
-                    color: #374151;
-                }
-                
-                .notification-message {
-                    font-size: 14px;
-                    color: #4b5563;
-                    line-height: 1.5;
-                    margin: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                }
-                
-                .notification-progress {
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    height: 3px;
-                    background: #3b82f6;
-                    width: 100%;
-                    transform: scaleX(1);
-                    transform-origin: left center;
-                    transition: transform linear;
-                }
-                
-                .notification.success .notification-progress {
-                    background: #10b981;
-                }
-                
-                .notification.error .notification-progress {
-                    background: #ef4444;
-                }
-                
-                .notification.warning .notification-progress {
-                    background: #f59e0b;
-                }
-                
-                .notification.info .notification-progress {
-                    background: #3b82f6;
-                }
-                
-                @keyframes notificationShake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-2px); }
-                    75% { transform: translateX(2px); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        notify(title, message, options = {}) {
-            const {
-                type = 'info',
-                duration = 5000,
-                closeable = true,
-                onClose = null,
-                shake = false
-            } = options;
-
-            const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const notification = document.createElement('div');
-            notification.id = id;
-            notification.className = `notification ${type}`;
-            notification.setAttribute('data-id', id);
-            notification.setAttribute('role', 'alert');
-            notification.setAttribute('aria-live', 'polite');
-
-            const header = document.createElement('div');
-            header.className = 'notification-header';
-
-            const titleEl = document.createElement('h3');
-            titleEl.className = 'notification-title';
-            titleEl.textContent = title;
-
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'notification-close';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.setAttribute('aria-label', 'Close notification');
-            closeBtn.addEventListener('click', () => this.dismiss(id));
-
-            header.appendChild(titleEl);
-            if (closeable) header.appendChild(closeBtn);
-
-            const messageEl = document.createElement('p');
-            messageEl.className = 'notification-message';
-            messageEl.textContent = message;
-
-            const progressBar = document.createElement('div');
-            progressBar.className = 'notification-progress';
-            progressBar.style.transform = 'scaleX(1)';
-
-            notification.appendChild(header);
-            notification.appendChild(messageEl);
-            notification.appendChild(progressBar);
-
-            // PROSES DOM APPEND - Dijalankan seperti biasa
-            this.container.appendChild(notification);
-
-            // ===============================
-            // PERBAIKAN TIMING: requestAnimationFrame nesting
-            // ===============================
-            requestAnimationFrame(() => {
-                // Berikan browser 1 frame kosong untuk render element
-                requestAnimationFrame(() => {
-                    // Step 1: Tambah class 'spawn' untuk animasi masuk
-                    notification.classList.add('spawn');
-                    
-                    // Step 2: Setelah animasi spawn selesai, tambah class 'active'
-                    setTimeout(() => {
-                        notification.classList.add('active');
-                        
-                        // Step 3: Mulai progress bar di frame berikutnya
-                        requestAnimationFrame(() => {
-                            if (duration > 0) {
-                                progressBar.style.transition = `transform ${duration}ms linear`;
-                                progressBar.style.transform = 'scaleX(0)';
-                            }
-                        });
-                    }, 10); // Delay kecil untuk sinkronisasi
-                });
-
-                // Animasi shake jika diperlukan
-                if (shake) {
-                    notification.style.animation = 'notificationShake 0.5s ease';
-                }
-            });
-
-            // Setup auto-dismiss
-            if (duration > 0) {
-                const timeout = setTimeout(() => this.dismiss(id), duration);
-                notification.dataset.timeoutId = timeout;
-            }
-
-            // Setup event listeners
-            notification.addEventListener('mouseenter', () => {
-                if (duration > 0) {
-                    const timeoutId = notification.dataset.timeoutId;
-                    if (timeoutId) {
-                        clearTimeout(parseInt(timeoutId));
-                        notification.dataset.timeoutId = '';
-                    }
-                    progressBar.style.transition = 'none';
-                    progressBar.style.transform = 'scaleX(1)';
-                }
-            });
-
-            notification.addEventListener('mouseleave', () => {
-                if (duration > 0) {
-                    const remaining = notification.dataset.remainingTime || duration;
-                    const timeout = setTimeout(() => this.dismiss(id), remaining);
-                    notification.dataset.timeoutId = timeout;
-                    
-                    requestAnimationFrame(() => {
-                        progressBar.style.transition = `transform ${remaining}ms linear`;
-                        progressBar.style.transform = 'scaleX(0)';
-                    });
-                }
-            });
-
-            // Store reference
-            this.hasSpawned.add(notification);
-
-            return id;
-        }
-
-        dismiss(id) {
-            const notification = document.getElementById(id);
-            if (!notification) return;
-
-            // Clear timeout jika ada
-            const timeoutId = notification.dataset.timeoutId;
-            if (timeoutId) {
-                clearTimeout(parseInt(timeoutId));
-            }
-
-            // Animasi keluar
-            notification.classList.remove('active', 'spawn');
-            notification.style.transform = 'translateX(120%)';
-            notification.style.opacity = '0';
-
-            // Hapus element setelah animasi
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-                this.hasSpawned.delete(notification);
-            }, 400);
-        }
-
-        // API publik - TIDAK DIUBAH
-        success(title, message, duration = 3000) {
-            return this.notify(title, message, { 
-                type: 'success', 
-                duration,
-                shake: false 
-            });
-        }
-
-        error(title, message, duration = 5000) {
-            return this.notify(title, message, { 
-                type: 'error', 
-                duration,
-                shake: true 
-            });
-        }
-
-        warning(title, message, duration = 4000) {
-            return this.notify(title, message, { 
-                type: 'warning', 
-                duration,
-                shake: false 
-            });
-        }
-
-        info(title, message, duration = 3000) {
-            return this.notify(title, message, { 
-                type: 'info', 
-                duration,
-                shake: false 
-            });
-        }
-
-        clearAll() {
-            const notifications = this.container.querySelectorAll('.notification');
-            notifications.forEach(notification => {
-                const id = notification.id;
-                if (id) this.dismiss(id);
-            });
-        }
-    };
-}
 
 // =======================
 // Profile Button System
@@ -1538,17 +1181,11 @@ function initializeUISystem() {
     try {
         injectProfileCSS();
         
-        // Initialize Notification System
-        if (!window.Notifications) {
-            window.Notifications = new window.NotificationSystemClass();
-            // Note: window.notify akan di-define oleh Object.defineProperty di bawah
-            // Kita tetap assign instance ke property Notifications agar bisa diakses oleh fix wrapper
-            
-            // Dispatch event untuk memberitahu UI system
-            requestAnimationFrame(() => {
-                window.dispatchEvent(new CustomEvent('notification:ready'));
-            });
-        }
+        // Notification System sekarang disediakan oleh notification.js
+        // UI hanya menunggu sampai sistem notifikasi siap
+        window.addEventListener('notification:ready', () => {
+            console.log('🔔 Notification System ready (detected by UI)');
+        });
         
         if (!window.UI.Modal) {
             window.UI.Modal = new window.ModalSystemClass();
@@ -1589,11 +1226,11 @@ Object.defineProperty(window, 'notify', {
 
         return {
             success: (...args) => requestAnimationFrame(() => n.success(...args)),
-            error: (...args) => requestAnimationFrame(() => n.error(...args)),
+            error:   (...args) => requestAnimationFrame(() => n.error(...args)),
             warning: (...args) => requestAnimationFrame(() => n.warning(...args)),
-            info: (...args) => requestAnimationFrame(() => n.info(...args)),
-            show: (opts) => requestAnimationFrame(() => n.show(opts)),
-            clearAll: () => requestAnimationFrame(() => n.clearAll())
+            info:    (...args) => requestAnimationFrame(() => n.info(...args)),
+            show:    (opts)    => requestAnimationFrame(() => n.show(opts)),
+            clearAll: ()       => requestAnimationFrame(() => n.clearAll())
         };
     }
 });
@@ -1606,7 +1243,7 @@ if (document.readyState === 'loading') {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast, NotificationSystem: window.NotificationSystemClass };
+    module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast };
 }
 
-console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready with Notification Timing Fix`);
+console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready (Notification Outsourced)`);
