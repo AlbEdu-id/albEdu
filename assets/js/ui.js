@@ -23,356 +23,358 @@ const UI_CONFIG = {
 // =======================
 // Notification System - WITH TIMING FIX
 // =======================
-class NotificationSystem {
-    constructor() {
-        this.container = null;
-        this.queue = [];
-        this.init();
-        this.hasSpawned = new WeakSet(); // Flag internal minimal
-    }
-
-    init() {
-        this.createContainer();
-        this.injectNotificationCSS();
-        console.log('🔔 Notification System Initialized with Timing Fix');
-    }
-
-    createContainer() {
-        if (!document.getElementById('notification-container')) {
-            this.container = document.createElement('div');
-            this.container.id = 'notification-container';
-            this.container.className = 'notification-container';
-            document.body.appendChild(this.container);
-        } else {
-            this.container = document.getElementById('notification-container');
+if (!window.NotificationSystemClass) {
+    window.NotificationSystemClass = class NotificationSystem {
+        constructor() {
+            this.container = null;
+            this.queue = [];
+            this.init();
+            this.hasSpawned = new WeakSet(); // Flag internal minimal
         }
-    }
 
-    injectNotificationCSS() {
-        if (document.querySelector('#notification-css')) return;
-        const style = document.createElement('style');
-        style.id = 'notification-css';
-        style.textContent = `
-            .notification-container {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 100000;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                pointer-events: none;
-            }
-            
-            .notification {
-                background: white;
-                border-radius: 12px;
-                padding: 16px 20px;
-                min-width: 300px;
-                max-width: 400px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-                border-left: 5px solid #3b82f6;
-                transform: translateX(120%);
-                opacity: 0;
-                transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-                            opacity 0.3s ease;
-                pointer-events: auto;
-                overflow: hidden;
-                position: relative;
-            }
-            
-            .notification.spawn {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            
-            .notification.active {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            
-            .notification.success {
-                border-left-color: #10b981;
-                background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-            }
-            
-            .notification.error {
-                border-left-color: #ef4444;
-                background: linear-gradient(135deg, #fef2f2, #fee2e2);
-            }
-            
-            .notification.warning {
-                border-left-color: #f59e0b;
-                background: linear-gradient(135deg, #fffbeb, #fef3c7);
-            }
-            
-            .notification.info {
-                border-left-color: #3b82f6;
-                background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            }
-            
-            .notification-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 8px;
-            }
-            
-            .notification-title {
-                font-weight: 600;
-                font-size: 16px;
-                color: #1f2937;
-                margin: 0;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-            
-            .notification-close {
-                background: transparent;
-                border: none;
-                color: #6b7280;
-                font-size: 20px;
-                cursor: pointer;
-                width: 24px;
-                height: 24px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: all 0.2s;
-                padding: 0;
-                line-height: 1;
-                margin-left: 10px;
-            }
-            
-            .notification-close:hover {
-                background: rgba(0, 0, 0, 0.05);
-                color: #374151;
-            }
-            
-            .notification-message {
-                font-size: 14px;
-                color: #4b5563;
-                line-height: 1.5;
-                margin: 0;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-            
-            .notification-progress {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                height: 3px;
-                background: #3b82f6;
-                width: 100%;
-                transform: scaleX(1);
-                transform-origin: left center;
-                transition: transform linear;
-            }
-            
-            .notification.success .notification-progress {
-                background: #10b981;
-            }
-            
-            .notification.error .notification-progress {
-                background: #ef4444;
-            }
-            
-            .notification.warning .notification-progress {
-                background: #f59e0b;
-            }
-            
-            .notification.info .notification-progress {
-                background: #3b82f6;
-            }
-            
-            @keyframes notificationShake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-2px); }
-                75% { transform: translateX(2px); }
-            }
-        `;
-        document.head.appendChild(style);
-    }
+        init() {
+            this.createContainer();
+            this.injectNotificationCSS();
+            console.log('🔔 Notification System Initialized with Timing Fix');
+        }
 
-    notify(title, message, options = {}) {
-        const {
-            type = 'info',
-            duration = 5000,
-            closeable = true,
-            onClose = null,
-            shake = false
-        } = options;
+        createContainer() {
+            if (!document.getElementById('notification-container')) {
+                this.container = document.createElement('div');
+                this.container.id = 'notification-container';
+                this.container.className = 'notification-container';
+                document.body.appendChild(this.container);
+            } else {
+                this.container = document.getElementById('notification-container');
+            }
+        }
 
-        const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const notification = document.createElement('div');
-        notification.id = id;
-        notification.className = `notification ${type}`;
-        notification.setAttribute('data-id', id);
-        notification.setAttribute('role', 'alert');
-        notification.setAttribute('aria-live', 'polite');
-
-        const header = document.createElement('div');
-        header.className = 'notification-header';
-
-        const titleEl = document.createElement('h3');
-        titleEl.className = 'notification-title';
-        titleEl.textContent = title;
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'notification-close';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.setAttribute('aria-label', 'Close notification');
-        closeBtn.addEventListener('click', () => this.dismiss(id));
-
-        header.appendChild(titleEl);
-        if (closeable) header.appendChild(closeBtn);
-
-        const messageEl = document.createElement('p');
-        messageEl.className = 'notification-message';
-        messageEl.textContent = message;
-
-        const progressBar = document.createElement('div');
-        progressBar.className = 'notification-progress';
-        progressBar.style.transform = 'scaleX(1)';
-
-        notification.appendChild(header);
-        notification.appendChild(messageEl);
-        notification.appendChild(progressBar);
-
-        // PROSES DOM APPEND - Dijalankan seperti biasa
-        this.container.appendChild(notification);
-
-        // ===============================
-        // PERBAIKAN TIMING: requestAnimationFrame nesting
-        // ===============================
-        requestAnimationFrame(() => {
-            // Berikan browser 1 frame kosong untuk render element
-            requestAnimationFrame(() => {
-                // Step 1: Tambah class 'spawn' untuk animasi masuk
-                notification.classList.add('spawn');
+        injectNotificationCSS() {
+            if (document.querySelector('#notification-css')) return;
+            const style = document.createElement('style');
+            style.id = 'notification-css';
+            style.textContent = `
+                .notification-container {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 100000;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    pointer-events: none;
+                }
                 
-                // Step 2: Setelah animasi spawn selesai, tambah class 'active'
-                setTimeout(() => {
-                    notification.classList.add('active');
+                .notification {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 16px 20px;
+                    min-width: 300px;
+                    max-width: 400px;
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+                    border-left: 5px solid #3b82f6;
+                    transform: translateX(120%);
+                    opacity: 0;
+                    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                                opacity 0.3s ease;
+                    pointer-events: auto;
+                    overflow: hidden;
+                    position: relative;
+                }
+                
+                .notification.spawn {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                
+                .notification.active {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                
+                .notification.success {
+                    border-left-color: #10b981;
+                    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+                }
+                
+                .notification.error {
+                    border-left-color: #ef4444;
+                    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+                }
+                
+                .notification.warning {
+                    border-left-color: #f59e0b;
+                    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+                }
+                
+                .notification.info {
+                    border-left-color: #3b82f6;
+                    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+                }
+                
+                .notification-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 8px;
+                }
+                
+                .notification-title {
+                    font-weight: 600;
+                    font-size: 16px;
+                    color: #1f2937;
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+                
+                .notification-close {
+                    background: transparent;
+                    border: none;
+                    color: #6b7280;
+                    font-size: 20px;
+                    cursor: pointer;
+                    width: 24px;
+                    height: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    transition: all 0.2s;
+                    padding: 0;
+                    line-height: 1;
+                    margin-left: 10px;
+                }
+                
+                .notification-close:hover {
+                    background: rgba(0, 0, 0, 0.05);
+                    color: #374151;
+                }
+                
+                .notification-message {
+                    font-size: 14px;
+                    color: #4b5563;
+                    line-height: 1.5;
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+                
+                .notification-progress {
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    height: 3px;
+                    background: #3b82f6;
+                    width: 100%;
+                    transform: scaleX(1);
+                    transform-origin: left center;
+                    transition: transform linear;
+                }
+                
+                .notification.success .notification-progress {
+                    background: #10b981;
+                }
+                
+                .notification.error .notification-progress {
+                    background: #ef4444;
+                }
+                
+                .notification.warning .notification-progress {
+                    background: #f59e0b;
+                }
+                
+                .notification.info .notification-progress {
+                    background: #3b82f6;
+                }
+                
+                @keyframes notificationShake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-2px); }
+                    75% { transform: translateX(2px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        notify(title, message, options = {}) {
+            const {
+                type = 'info',
+                duration = 5000,
+                closeable = true,
+                onClose = null,
+                shake = false
+            } = options;
+
+            const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const notification = document.createElement('div');
+            notification.id = id;
+            notification.className = `notification ${type}`;
+            notification.setAttribute('data-id', id);
+            notification.setAttribute('role', 'alert');
+            notification.setAttribute('aria-live', 'polite');
+
+            const header = document.createElement('div');
+            header.className = 'notification-header';
+
+            const titleEl = document.createElement('h3');
+            titleEl.className = 'notification-title';
+            titleEl.textContent = title;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'notification-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.setAttribute('aria-label', 'Close notification');
+            closeBtn.addEventListener('click', () => this.dismiss(id));
+
+            header.appendChild(titleEl);
+            if (closeable) header.appendChild(closeBtn);
+
+            const messageEl = document.createElement('p');
+            messageEl.className = 'notification-message';
+            messageEl.textContent = message;
+
+            const progressBar = document.createElement('div');
+            progressBar.className = 'notification-progress';
+            progressBar.style.transform = 'scaleX(1)';
+
+            notification.appendChild(header);
+            notification.appendChild(messageEl);
+            notification.appendChild(progressBar);
+
+            // PROSES DOM APPEND - Dijalankan seperti biasa
+            this.container.appendChild(notification);
+
+            // ===============================
+            // PERBAIKAN TIMING: requestAnimationFrame nesting
+            // ===============================
+            requestAnimationFrame(() => {
+                // Berikan browser 1 frame kosong untuk render element
+                requestAnimationFrame(() => {
+                    // Step 1: Tambah class 'spawn' untuk animasi masuk
+                    notification.classList.add('spawn');
                     
-                    // Step 3: Mulai progress bar di frame berikutnya
-                    requestAnimationFrame(() => {
-                        if (duration > 0) {
-                            progressBar.style.transition = `transform ${duration}ms linear`;
-                            progressBar.style.transform = 'scaleX(0)';
-                        }
-                    });
-                }, 10); // Delay kecil untuk sinkronisasi
+                    // Step 2: Setelah animasi spawn selesai, tambah class 'active'
+                    setTimeout(() => {
+                        notification.classList.add('active');
+                        
+                        // Step 3: Mulai progress bar di frame berikutnya
+                        requestAnimationFrame(() => {
+                            if (duration > 0) {
+                                progressBar.style.transition = `transform ${duration}ms linear`;
+                                progressBar.style.transform = 'scaleX(0)';
+                            }
+                        });
+                    }, 10); // Delay kecil untuk sinkronisasi
+                });
+
+                // Animasi shake jika diperlukan
+                if (shake) {
+                    notification.style.animation = 'notificationShake 0.5s ease';
+                }
             });
 
-            // Animasi shake jika diperlukan
-            if (shake) {
-                notification.style.animation = 'notificationShake 0.5s ease';
-            }
-        });
-
-        // Setup auto-dismiss
-        if (duration > 0) {
-            const timeout = setTimeout(() => this.dismiss(id), duration);
-            notification.dataset.timeoutId = timeout;
-        }
-
-        // Setup event listeners
-        notification.addEventListener('mouseenter', () => {
+            // Setup auto-dismiss
             if (duration > 0) {
-                const timeoutId = notification.dataset.timeoutId;
-                if (timeoutId) {
-                    clearTimeout(parseInt(timeoutId));
-                    notification.dataset.timeoutId = '';
-                }
-                progressBar.style.transition = 'none';
-                progressBar.style.transform = 'scaleX(1)';
-            }
-        });
-
-        notification.addEventListener('mouseleave', () => {
-            if (duration > 0) {
-                const remaining = notification.dataset.remainingTime || duration;
-                const timeout = setTimeout(() => this.dismiss(id), remaining);
+                const timeout = setTimeout(() => this.dismiss(id), duration);
                 notification.dataset.timeoutId = timeout;
-                
-                requestAnimationFrame(() => {
-                    progressBar.style.transition = `transform ${remaining}ms linear`;
-                    progressBar.style.transform = 'scaleX(0)';
-                });
             }
-        });
 
-        // Store reference
-        this.hasSpawned.add(notification);
+            // Setup event listeners
+            notification.addEventListener('mouseenter', () => {
+                if (duration > 0) {
+                    const timeoutId = notification.dataset.timeoutId;
+                    if (timeoutId) {
+                        clearTimeout(parseInt(timeoutId));
+                        notification.dataset.timeoutId = '';
+                    }
+                    progressBar.style.transition = 'none';
+                    progressBar.style.transform = 'scaleX(1)';
+                }
+            });
 
-        return id;
-    }
+            notification.addEventListener('mouseleave', () => {
+                if (duration > 0) {
+                    const remaining = notification.dataset.remainingTime || duration;
+                    const timeout = setTimeout(() => this.dismiss(id), remaining);
+                    notification.dataset.timeoutId = timeout;
+                    
+                    requestAnimationFrame(() => {
+                        progressBar.style.transition = `transform ${remaining}ms linear`;
+                        progressBar.style.transform = 'scaleX(0)';
+                    });
+                }
+            });
 
-    dismiss(id) {
-        const notification = document.getElementById(id);
-        if (!notification) return;
+            // Store reference
+            this.hasSpawned.add(notification);
 
-        // Clear timeout jika ada
-        const timeoutId = notification.dataset.timeoutId;
-        if (timeoutId) {
-            clearTimeout(parseInt(timeoutId));
+            return id;
         }
 
-        // Animasi keluar
-        notification.classList.remove('active', 'spawn');
-        notification.style.transform = 'translateX(120%)';
-        notification.style.opacity = '0';
+        dismiss(id) {
+            const notification = document.getElementById(id);
+            if (!notification) return;
 
-        // Hapus element setelah animasi
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+            // Clear timeout jika ada
+            const timeoutId = notification.dataset.timeoutId;
+            if (timeoutId) {
+                clearTimeout(parseInt(timeoutId));
             }
-            this.hasSpawned.delete(notification);
-        }, 400);
-    }
 
-    // API publik - TIDAK DIUBAH
-    success(title, message, duration = 3000) {
-        return this.notify(title, message, { 
-            type: 'success', 
-            duration,
-            shake: false 
-        });
-    }
+            // Animasi keluar
+            notification.classList.remove('active', 'spawn');
+            notification.style.transform = 'translateX(120%)';
+            notification.style.opacity = '0';
 
-    error(title, message, duration = 5000) {
-        return this.notify(title, message, { 
-            type: 'error', 
-            duration,
-            shake: true 
-        });
-    }
+            // Hapus element setelah animasi
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+                this.hasSpawned.delete(notification);
+            }, 400);
+        }
 
-    warning(title, message, duration = 4000) {
-        return this.notify(title, message, { 
-            type: 'warning', 
-            duration,
-            shake: false 
-        });
-    }
+        // API publik - TIDAK DIUBAH
+        success(title, message, duration = 3000) {
+            return this.notify(title, message, { 
+                type: 'success', 
+                duration,
+                shake: false 
+            });
+        }
 
-    info(title, message, duration = 3000) {
-        return this.notify(title, message, { 
-            type: 'info', 
-            duration,
-            shake: false 
-        });
-    }
+        error(title, message, duration = 5000) {
+            return this.notify(title, message, { 
+                type: 'error', 
+                duration,
+                shake: true 
+            });
+        }
 
-    clearAll() {
-        const notifications = this.container.querySelectorAll('.notification');
-        notifications.forEach(notification => {
-            const id = notification.id;
-            if (id) this.dismiss(id);
-        });
-    }
+        warning(title, message, duration = 4000) {
+            return this.notify(title, message, { 
+                type: 'warning', 
+                duration,
+                shake: false 
+            });
+        }
+
+        info(title, message, duration = 3000) {
+            return this.notify(title, message, { 
+                type: 'info', 
+                duration,
+                shake: false 
+            });
+        }
+
+        clearAll() {
+            const notifications = this.container.querySelectorAll('.notification');
+            notifications.forEach(notification => {
+                const id = notification.id;
+                if (id) this.dismiss(id);
+            });
+        }
+    };
 }
 
 // =======================
@@ -1247,190 +1249,194 @@ function updateSaveButtonState() {
 // =======================
 // Modal System
 // =======================
-class ModalSystem {
-    constructor() { this.modals = new Map(); this.init(); }
-    init() { this.injectModalCSS(); console.log('📦 Modal System Initialized'); }
-    injectModalCSS() {
-        if (document.querySelector('#modal-css')) return;
-        const style = document.createElement('style');
-        style.id = 'modal-css';
-        style.textContent = `
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
-            .modal { background: white; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); transform: translateY(-20px) scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-            .modal.active { transform: translateY(0) scale(1); opacity: 1; }
-            .modal-header { padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f9fafb; }
-            .modal-title { margin: 0; font-size: 20px; font-weight: 600; color: #1f2937; }
-            .modal-close { background: none; border: none; font-size: 24px; color: #6b7280; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-            .modal-close:hover { background: #f3f4f6; color: #374151; }
-            .modal-content { padding: 24px; max-height: 60vh; overflow-y: auto; }
-            .modal-footer { padding: 20px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px; background: #f9fafb; }
-            .modal-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
-            .modal-btn-primary { background: #3b82f6; color: white; }
-            .modal-btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
-            .modal-btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-            .modal-btn-secondary:hover { background: #e5e7eb; }
-        `;
-        document.head.appendChild(style);
-    }
-    show(options) {
-        const { title = 'Modal', content = '', buttons = [], onClose = null, closeOnOverlayClick = true } = options;
-        const id = `modal-${Date.now()}`;
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.id = `${id}-overlay`;
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = id;
-        const header = document.createElement('div');
-        header.className = 'modal-header';
-        const titleEl = document.createElement('h2');
-        titleEl.className = 'modal-title';
-        titleEl.textContent = title;
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'modal-close';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.addEventListener('click', () => this.hide(id));
-        header.appendChild(titleEl);
-        header.appendChild(closeBtn);
-        const contentEl = document.createElement('div');
-        contentEl.className = 'modal-content';
-        if (typeof content === 'string') contentEl.innerHTML = content;
-        else if (content instanceof HTMLElement) contentEl.appendChild(content);
-        else contentEl.textContent = content;
-        const footer = document.createElement('div');
-        footer.className = 'modal-footer';
-        buttons.forEach(btn => {
-            const button = document.createElement('button');
-            button.className = `modal-btn modal-btn-${btn.type || 'secondary'}`;
-            button.textContent = btn.text;
-            if (btn.onClick) {
-                button.addEventListener('click', () => {
-                    btn.onClick();
-                    if (btn.closeOnClick !== false) this.hide(id);
+if (!window.ModalSystemClass) {
+    window.ModalSystemClass = class ModalSystem {
+        constructor() { this.modals = new Map(); this.init(); }
+        init() { this.injectModalCSS(); console.log('📦 Modal System Initialized'); }
+        injectModalCSS() {
+            if (document.querySelector('#modal-css')) return;
+            const style = document.createElement('style');
+            style.id = 'modal-css';
+            style.textContent = `
+                .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+                .modal { background: white; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); transform: translateY(-20px) scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+                .modal.active { transform: translateY(0) scale(1); opacity: 1; }
+                .modal-header { padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f9fafb; }
+                .modal-title { margin: 0; font-size: 20px; font-weight: 600; color: #1f2937; }
+                .modal-close { background: none; border: none; font-size: 24px; color: #6b7280; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+                .modal-close:hover { background: #f3f4f6; color: #374151; }
+                .modal-content { padding: 24px; max-height: 60vh; overflow-y: auto; }
+                .modal-footer { padding: 20px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px; background: #f9fafb; }
+                .modal-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
+                .modal-btn-primary { background: #3b82f6; color: white; }
+                .modal-btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+                .modal-btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+                .modal-btn-secondary:hover { background: #e5e7eb; }
+            `;
+            document.head.appendChild(style);
+        }
+        show(options) {
+            const { title = 'Modal', content = '', buttons = [], onClose = null, closeOnOverlayClick = true } = options;
+            const id = `modal-${Date.now()}`;
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.id = `${id}-overlay`;
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.id = id;
+            const header = document.createElement('div');
+            header.className = 'modal-header';
+            const titleEl = document.createElement('h2');
+            titleEl.className = 'modal-title';
+            titleEl.textContent = title;
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.addEventListener('click', () => this.hide(id));
+            header.appendChild(titleEl);
+            header.appendChild(closeBtn);
+            const contentEl = document.createElement('div');
+            contentEl.className = 'modal-content';
+            if (typeof content === 'string') contentEl.innerHTML = content;
+            else if (content instanceof HTMLElement) contentEl.appendChild(content);
+            else contentEl.textContent = content;
+            const footer = document.createElement('div');
+            footer.className = 'modal-footer';
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.className = `modal-btn modal-btn-${btn.type || 'secondary'}`;
+                button.textContent = btn.text;
+                if (btn.onClick) {
+                    button.addEventListener('click', () => {
+                        btn.onClick();
+                        if (btn.closeOnClick !== false) this.hide(id);
+                    });
+                } else button.addEventListener('click', () => this.hide(id));
+                footer.appendChild(button);
+            });
+            modal.appendChild(header);
+            modal.appendChild(contentEl);
+            if (buttons.length > 0) modal.appendChild(footer);
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            this.modals.set(id, { overlay, modal, onClose });
+            setTimeout(() => { overlay.style.opacity = '1'; modal.classList.add('active'); }, 10);
+            if (closeOnOverlayClick) overlay.addEventListener('click', (e) => { if (e.target === overlay) this.hide(id); });
+            const escapeHandler = (e) => { if (e.key === 'Escape') this.hide(id); };
+            document.addEventListener('keydown', escapeHandler);
+            this.modals.get(id).escapeHandler = escapeHandler;
+            return id;
+        }
+        hide(id) {
+            const modalData = this.modals.get(id);
+            if (!modalData) return;
+            const { overlay, modal, onClose, escapeHandler } = modalData;
+            if (escapeHandler) document.removeEventListener('keydown', escapeHandler);
+            modal.classList.remove('active');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                this.modals.delete(id);
+                if (onClose) onClose();
+            }, 300);
+        }
+        confirm(options) {
+            return new Promise((resolve) => {
+                this.show({
+                    title: options.title || 'Konfirmasi',
+                    content: options.message || 'Apakah anda yakin?',
+                    buttons: [
+                        { text: options.cancelText || 'Batal', type: 'secondary', onClick: () => resolve(false) },
+                        { text: options.confirmText || 'Ya', type: 'primary', onClick: () => resolve(true) }
+                    ]
                 });
-            } else button.addEventListener('click', () => this.hide(id));
-            footer.appendChild(button);
-        });
-        modal.appendChild(header);
-        modal.appendChild(contentEl);
-        if (buttons.length > 0) modal.appendChild(footer);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        this.modals.set(id, { overlay, modal, onClose });
-        setTimeout(() => { overlay.style.opacity = '1'; modal.classList.add('active'); }, 10);
-        if (closeOnOverlayClick) overlay.addEventListener('click', (e) => { if (e.target === overlay) this.hide(id); });
-        const escapeHandler = (e) => { if (e.key === 'Escape') this.hide(id); };
-        document.addEventListener('keydown', escapeHandler);
-        this.modals.get(id).escapeHandler = escapeHandler;
-        return id;
-    }
-    hide(id) {
-        const modalData = this.modals.get(id);
-        if (!modalData) return;
-        const { overlay, modal, onClose, escapeHandler } = modalData;
-        if (escapeHandler) document.removeEventListener('keydown', escapeHandler);
-        modal.classList.remove('active');
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            this.modals.delete(id);
-            if (onClose) onClose();
-        }, 300);
-    }
-    confirm(options) {
-        return new Promise((resolve) => {
-            this.show({
-                title: options.title || 'Konfirmasi',
-                content: options.message || 'Apakah anda yakin?',
-                buttons: [
-                    { text: options.cancelText || 'Batal', type: 'secondary', onClick: () => resolve(false) },
-                    { text: options.confirmText || 'Ya', type: 'primary', onClick: () => resolve(true) }
-                ]
             });
-        });
-    }
-    alert(options) {
-        return new Promise((resolve) => {
-            this.show({
-                title: options.title || 'Informasi',
-                content: options.message || '',
-                buttons: [{ text: options.okText || 'OK', type: 'primary', onClick: () => resolve() }]
+        }
+        alert(options) {
+            return new Promise((resolve) => {
+                this.show({
+                    title: options.title || 'Informasi',
+                    content: options.message || '',
+                    buttons: [{ text: options.okText || 'OK', type: 'primary', onClick: () => resolve() }]
+                });
             });
-        });
-    }
+        }
+    };
 }
 
 // =======================
 // Toast System
 // =======================
-class ToastSystem {
-    constructor() { this.container = null; this.toasts = new Map(); this.init(); }
-    init() { this.createContainer(); this.injectToastCSS(); console.log('🍞 Toast System Initialized'); }
-    createContainer() {
-        if (!document.getElementById('toast-container')) {
-            this.container = document.createElement('div');
-            this.container.id = 'toast-container';
-            this.container.className = 'toast-container';
-            document.body.appendChild(this.container);
-        } else this.container = document.getElementById('toast-container');
-    }
-    injectToastCSS() {
-        if (document.querySelector('#toast-css')) return;
-        const style = document.createElement('style');
-        style.id = 'toast-css';
-        style.textContent = `
-            .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; width: 100%; max-width: 400px; }
-            .toast { background: rgba(31, 41, 55, 0.95); color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; backdrop-filter: blur(10px); }
-            .toast.show { transform: translateY(0); opacity: 1; }
-            .toast.hide { transform: translateY(-100px); opacity: 0; }
-            .toast-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-            .toast-message { flex: 1; font-size: 14px; line-height: 1.5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-            .toast-close { background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 20px; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; flex-shrink: 0; padding: 0; line-height: 1; }
-            .toast-close:hover { background: rgba(255, 255, 255, 0.1); color: white; }
-            .toast.success { background: rgba(16, 185, 129, 0.95); }
-            .toast.error { background: rgba(239, 68, 68, 0.95); }
-            .toast.warning { background: rgba(245, 158, 11, 0.95); }
-            .toast.info { background: rgba(59, 130, 246, 0.95); }
-        `;
-        document.head.appendChild(style);
-    }
-    show(message, options = {}) {
-        const { type = 'info', duration = 3000, closeable = true, icon = null } = options;
-        const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const toast = document.createElement('div');
-        toast.id = id;
-        toast.className = `toast ${type}`;
-        const iconContent = icon || this.getIcon(type);
-        toast.innerHTML = `<div class="toast-icon">${iconContent}</div><div class="toast-message">${message}</div>${closeable ? '<button class="toast-close">&times;</button>' : ''}`;
-        if (closeable) toast.querySelector('.toast-close').addEventListener('click', () => this.hide(id));
-        toast.addEventListener('click', (e) => { if (!e.target.closest('.toast-close')) this.hide(id); });
-        this.container.appendChild(toast);
-        this.toasts.set(id, { element: toast, timeout: null });
-        setTimeout(() => toast.classList.add('show'), 10);
-        if (duration > 0) {
-            const timeout = setTimeout(() => this.hide(id), duration);
-            this.toasts.get(id).timeout = timeout;
+if (!window.ToastSystemClass) {
+    window.ToastSystemClass = class ToastSystem {
+        constructor() { this.container = null; this.toasts = new Map(); this.init(); }
+        init() { this.createContainer(); this.injectToastCSS(); console.log('🍞 Toast System Initialized'); }
+        createContainer() {
+            if (!document.getElementById('toast-container')) {
+                this.container = document.createElement('div');
+                this.container.id = 'toast-container';
+                this.container.className = 'toast-container';
+                document.body.appendChild(this.container);
+            } else this.container = document.getElementById('toast-container');
         }
-        return id;
-    }
-    getIcon(type) { const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' }; return icons[type] || '🔔'; }
-    hide(id) {
-        const toastData = this.toasts.get(id);
-        if (!toastData) return;
-        const { element, timeout } = toastData;
-        if (timeout) clearTimeout(timeout);
-        element.classList.remove('show');
-        element.classList.add('hide');
-        setTimeout(() => {
-            if (element.parentNode) element.parentNode.removeChild(element);
-            this.toasts.delete(id);
-        }, 300);
-    }
-    clearAll() { this.toasts.forEach((toastData, id) => this.hide(id)); }
-    success(message, duration = 3000) { return this.show(message, { type: 'success', duration }); }
-    error(message, duration = 4000) { return this.show(message, { type: 'error', duration }); }
-    warning(message, duration = 3500) { return this.show(message, { type: 'warning', duration }); }
-    info(message, duration = 2500) { return this.show(message, { type: 'info', duration }); }
+        injectToastCSS() {
+            if (document.querySelector('#toast-css')) return;
+            const style = document.createElement('style');
+            style.id = 'toast-css';
+            style.textContent = `
+                .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; width: 100%; max-width: 400px; }
+                .toast { background: rgba(31, 41, 55, 0.95); color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; backdrop-filter: blur(10px); }
+                .toast.show { transform: translateY(0); opacity: 1; }
+                .toast.hide { transform: translateY(-100px); opacity: 0; }
+                .toast-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+                .toast-message { flex: 1; font-size: 14px; line-height: 1.5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+                .toast-close { background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 20px; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; flex-shrink: 0; padding: 0; line-height: 1; }
+                .toast-close:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+                .toast.success { background: rgba(16, 185, 129, 0.95); }
+                .toast.error { background: rgba(239, 68, 68, 0.95); }
+                .toast.warning { background: rgba(245, 158, 11, 0.95); }
+                .toast.info { background: rgba(59, 130, 246, 0.95); }
+            `;
+            document.head.appendChild(style);
+        }
+        show(message, options = {}) {
+            const { type = 'info', duration = 3000, closeable = true, icon = null } = options;
+            const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const toast = document.createElement('div');
+            toast.id = id;
+            toast.className = `toast ${type}`;
+            const iconContent = icon || this.getIcon(type);
+            toast.innerHTML = `<div class="toast-icon">${iconContent}</div><div class="toast-message">${message}</div>${closeable ? '<button class="toast-close">&times;</button>' : ''}`;
+            if (closeable) toast.querySelector('.toast-close').addEventListener('click', () => this.hide(id));
+            toast.addEventListener('click', (e) => { if (!e.target.closest('.toast-close')) this.hide(id); });
+            this.container.appendChild(toast);
+            this.toasts.set(id, { element: toast, timeout: null });
+            setTimeout(() => toast.classList.add('show'), 10);
+            if (duration > 0) {
+                const timeout = setTimeout(() => this.hide(id), duration);
+                this.toasts.get(id).timeout = timeout;
+            }
+            return id;
+        }
+        getIcon(type) { const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' }; return icons[type] || '🔔'; }
+        hide(id) {
+            const toastData = this.toasts.get(id);
+            if (!toastData) return;
+            const { element, timeout } = toastData;
+            if (timeout) clearTimeout(timeout);
+            element.classList.remove('show');
+            element.classList.add('hide');
+            setTimeout(() => {
+                if (element.parentNode) element.parentNode.removeChild(element);
+                this.toasts.delete(id);
+            }, 300);
+        }
+        clearAll() { this.toasts.forEach((toastData, id) => this.hide(id)); }
+        success(message, duration = 3000) { return this.show(message, { type: 'success', duration }); }
+        error(message, duration = 4000) { return this.show(message, { type: 'error', duration }); }
+        warning(message, duration = 3500) { return this.show(message, { type: 'warning', duration }); }
+        info(message, duration = 2500) { return this.show(message, { type: 'info', duration }); }
+    };
 }
 
 // =======================
@@ -1534,7 +1540,7 @@ function initializeUISystem() {
         
         // Initialize Notification System dengan timing fix
         if (!window.Notifications) {
-            window.Notifications = new NotificationSystem();
+            window.Notifications = new window.NotificationSystemClass();
             window.notify = window.Notifications;
             
             // Dispatch event untuk memberitahu UI system
@@ -1543,10 +1549,13 @@ function initializeUISystem() {
             });
         }
         
-        const modalSystem = new ModalSystem();
-        const toastSystem = new ToastSystem();
-        window.UI.Modal = modalSystem;
-        window.UI.Toast = toastSystem;
+        if (!window.UI.Modal) {
+            window.UI.Modal = new window.ModalSystemClass();
+        }
+        
+        if (!window.UI.Toast) {
+            window.UI.Toast = new window.ToastSystemClass();
+        }
         
         if (window.Auth && window.Auth.currentUser) {
             setTimeout(() => { createProfileButton(); console.log('✅ Profile button created'); }, 1000);
@@ -1582,7 +1591,7 @@ if (document.readyState === 'loading') {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast, NotificationSystem };
+    module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast, NotificationSystem: window.NotificationSystemClass };
 }
 
 console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready with Notification Timing Fix`);
