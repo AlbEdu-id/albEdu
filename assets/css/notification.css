@@ -1,371 +1,688 @@
-/* ========================  
-   NOTIFICATION SYSTEM - PREMIUM UPGRADE
-   (Glassmorphism & Depth Enhanced)
-   ======================== */  
+/* ========================        
+NOTIFICATION SYSTEM - CARTOON/TOON STYLE
+(Matikan Realisme Kaca, Tambahkan Efek Kartun)      
+======================== */        
 
-:root {  
-    --bg-dark: #000;  
+:root {        
+    --bg-dark: #000;        
+    --notif-light: rgba(255, 255, 255, 0.96);  /* Ubah ke solid dengan opacity tinggi */
     
-    /* Mobile Light Theme - Lebih transparan untuk efek blur */
-    --notif-light: rgba(255, 255, 255, 0.88);  
+    /* Refined Animation Curves */      
+    --premium-ease: cubic-bezier(0.19, 1, 0.22, 1); /* Snappy start, soft landing */    
+    --exit-ease: cubic-bezier(0.4, 0, 0.2, 1);     /* Anticipative exit */    
+    --morph-ease: cubic-bezier(0.25, 0.1, 0.25, 1); /* Morphing lebih stabil */    
+    --desktop-ease: cubic-bezier(0.23, 1, 0.32, 1); /* Lebih halus untuk desktop */    
+    --slide-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Slide halus tanpa bounce */    
+            
+    /* Desktop Premium Cartoon Theme */        
+    --desktop-bg-light: rgba(255, 255, 255, 0.96); /* Ubah dari gradient ke solid */      
+    --desktop-text-light: #1d1d1f;        
+    --desktop-border-light: rgba(0, 0, 0, 0.12); /* Ubah border lebih gelap untuk kontras */      
+    --desktop-track-light: rgba(0, 0, 0, 0.04);        
+    --desktop-subtext-light: rgba(60, 60, 67, 0.7);        
+}        
+
+/* ========================      
+1️⃣ GLOBAL – MATIKAN REALISME KACA  
+======================== */    
+.mobile-mode .notification-item,
+.desktop-mode .notification-item {
+    /* ❌ HAPUS efek glassmorphism */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     
-    /* Animation Curve */
-    --fluid-curve: cubic-bezier(0.2, 1, 0.2, 1);  
-      
-    /* Desktop Premium Glass Theme */  
-    /* Gradient base yang halus */
-    --desktop-bg-light: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.75)); 
-    --desktop-text-light: #1d1d1f;  
-    
-    /* Highlight putih di border atas (efek cahaya) */
-    --desktop-border-light: rgba(255, 255, 255, 0.5); 
-    
-    --desktop-track-light: rgba(0, 0, 0, 0.04);  
-    --desktop-subtext-light: rgba(60, 60, 67, 0.7);  
-}  
-
-/* Notification Container - SAMA PERSIS */  
-.notification-container {  
-    position: fixed;  
-    inset: 0;  
-    pointer-events: none;  
-    z-index: 10000;  
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;  
-}  
-
-/* ========================   
-   MOBILE: FLUID STACK V4 - PREMIUM LOOK
-   ======================== */  
-.mobile-mode .notification-item {  
-    position: absolute;  
-    left: 50%;  
-    top: 0;  
-    
-    /* Visual Upgrade: Lebih tajam & clean */
-    background: var(--notif-light);  
-    backdrop-filter: blur(50px) saturate(200%);  
-    -webkit-backdrop-filter: blur(50px) saturate(200%);
-    
-    /* Shadow yang lebih halus tapi "pop-up" */
-    box-shadow: 
-        0 12px 40px -8px rgba(0,0,0,0.18),
-        0 0 0 1px rgba(0,0,0,0.06); /* Border tipis halus */
-    
-    display: flex;  
-    align-items: center;  
-    pointer-events: auto;  
-    overflow: hidden;  
-    
-    /* Animasi Tetap Sama Persis */
-    transition: transform 0.8s var(--fluid-curve),   
-                width 0.8s var(--fluid-curve),   
-                height 0.8s var(--fluid-curve),   
-                border-radius 0.8s var(--fluid-curve),   
-                opacity 0.5s ease;  
-}  
-
-/* Logic Animasi Mobile - SAMA PERSIS */
-.mobile-mode .notification-item.spawn {   
-    width: 40px;   
-    height: 40px;   
-    border-radius: 20px;   
-    opacity: 0;   
-    transform: translate(-50%, -120px) scale(0.3);   
-}  
-
-.mobile-mode .notification-item.active {   
-    width: 370px;   
-    max-width: 90vw;  
-    height: 78px;   
-    border-radius: 34px; /* Sedikit lebih bulat agar modern */
-    opacity: 1;   
-    transform: translate(-50%, 25px);   
-    z-index: 100;   
-}  
-
-.mobile-mode .notification-item.layer-1 {   
-    width: 330px;   
-    max-width: 85vw;  
-    height: 68px;   
-    border-radius: 30px;   
-    opacity: 0.6;   
-    transform: translate(-50%, 50px) scale(0.95);   
-    z-index: 90;   
-}  
-
-.mobile-mode .notification-item.layer-2 {   
-    width: 290px;   
-    max-width: 80vw;  
-    height: 58px;   
-    border-radius: 26px;   
-    opacity: 0.3;   
-    transform: translate(-50%, 70px) scale(0.9);   
-    z-index: 80;   
-}  
-
-.mobile-mode .notification-item.exit {   
-    transform: translate(-50%, -160px) scale(0);   
-    opacity: 0;   
-}  
-
-/* Progress Mobile - Horizontal - SAMA PERSIS */  
-.mobile-mode .progress-track {  
-    position: absolute;  
-    bottom: 0;  
-    left: 0;  
-    width: 100%;  
-    height: 3px;  
-    background: rgba(0,0,0,0.04);  
-    overflow: hidden;  
-}  
-
-.mobile-mode .progress-bar {   
-    height: 100%;   
-    width: 100%;   
-    transform-origin: left;  
-    transform: scaleX(1);  
-    filter: blur(0px); /* Clean look */
-}  
-
-/* ========================   
-   DESKTOP: PREMIUM GLASSMORPHISM
-   ======================== */  
-.desktop-mode .notification-item {  
-    position: absolute;  
-    right: 40px;  
-    bottom: 40px;  
-    width: 390px;  
-    max-width: 90vw;  
-    height: 145px;  
-    
-    /* Visual Upgrade: macOS Style Glass */
-    border-radius: 28px;  
-    background: var(--desktop-bg-light);  
-    
-    /* Border halus & Inner Highlight */
-    border: 1px solid var(--desktop-border-light);  
-    box-shadow: 
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.9), /* Efek pantulan cahaya atas */
-        0 20px 50px -12px rgba(0,0,0,0.15),      /* Shadow lembut luas */
-        0 8px 24px -6px rgba(0,0,0,0.08);        /* Shadow tajam dekat */
-        
-    color: var(--desktop-text-light);  
-    backdrop-filter: blur(40px) saturate(180%);  
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    
-    display: flex;  
-    align-items: center;  
-    pointer-events: auto;  
-    
-    /* Animasi Tetap Sama Persis */
-    transition: transform 0.7s cubic-bezier(0.25, 1.4, 0.35, 1), opacity 0.5s ease;  
-    
-    padding-right: 44px;  
-    padding-left: 6px;  
-}  
-
-.desktop-mode .notification-item.spawn {   
-    transform: translateX(120%);   
-    opacity: 0;   
-}  
-
-.desktop-mode .notification-item.active {   
-    transform: translateY(var(--y-offset));   
-    opacity: 1;   
-}  
-
-.desktop-mode .notification-item.exit {   
-    transform: translateX(120%) translateY(var(--y-offset));   
-    opacity: 0;   
-}  
-
-/* Progress Desktop - Vertical Liquid - PREMIUM */  
-.desktop-mode .progress-track {  
-    position: absolute;  
-    top: 30px;  
-    bottom: 30px;  
-    right: 18px;  
-    width: 10px; /* Sedikit lebih ramping */
-    height: auto;  
-    background: var(--desktop-track-light);  
-    
-    /* Inner shadow agar track terlihat cekung */
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.05); 
-    border-radius: 10px;  
-    overflow: hidden;  
-}  
-
-.desktop-mode .progress-bar {  
-    width: 100%;  
-    height: 100%;  
-    transform-origin: bottom;  
-    transform: scaleY(1);  
-    border-radius: 10px; /* Rounded ends for the bar */
-}  
-
-/* ========================   
-   UNIVERSAL CONTENT - VISUAL UPGRADE
-   ======================== */  
-.notification-icon {   
-    min-width: 70px;   
-    display: flex;   
-    justify-content: center;   
-}  
-
-.desktop-mode .notification-icon {  
-    min-width: 86px;  
-    padding-left: 10px;  
-}  
-
-/* Icon dengan efek 3D Gradient */
-.icon-blob {  
-    width: 54px;  
-    height: 54px;  
-    border-radius: 100px;  
-    display: flex;  
-    align-items: center;  
-    justify-content: center;  
-    color: white;  
-    
-    /* Shadow ikon agar timbul */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
-    font-size: 24px;
-}  
-
-.desktop-mode .icon-blob {  
-    width: 66px;  
-    height: 66px;  
-    border-radius: 22px;  
-    font-size: 28px;
-    box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-}  
-
-.notification-text {   
-    flex: 1;   
-    padding: 0 12px;   
-}  
-
-.desktop-mode .notification-text {  
-    padding-right: 28px;  
-}  
-
-/* Typography - Lebih Crisp */  
-.text-small {   
-    font-size: 11px;   
-    font-weight: 700;   
-    text-transform: uppercase;   
-    letter-spacing: 0.8px; /* Spacing lebih lebar dikit */
-    margin-bottom: 2px;   
-}  
-
-.desktop-mode .text-small {  
-    font-size: 13px;  
-    letter-spacing: 0.8px;  
-    margin-bottom: 5px;  
-}  
-
-.text-main {   
-    font-size: 15px;   
-    font-weight: 600;   
-    line-height: 1.35;   
-}  
-
-.desktop-mode .text-main {  
-    font-size: 19px; /* Sedikit dikecilkan agar elegan */
-    font-weight: 700;  
-    line-height: 1.4;  
-}  
-
-/* Mobile Colors */  
-.mobile-mode .text-small {   
-    color: rgba(0,0,0,0.55);   
-}  
-
-.mobile-mode .text-main {   
-    color: #1a1a1a;   
-}  
-
-.mobile-mode .notification-item:not(.active) .notification-text {   
-    opacity: 0;   
-}  
-
-/* Desktop Colors */  
-.desktop-mode .text-small {   
-    color: var(--desktop-subtext-light);   
-}  
-
-.desktop-mode .text-main {   
-    color: var(--desktop-text-light);   
-}  
-
-/* DESKTOP CONTENT ANIMATION - SAMA PERSIS */  
-.desktop-mode .stagger {  
-    opacity: 0;  
-    transform: translateY(12px);  
-    transition: 0.6s var(--fluid-curve);  
-}  
-
-.desktop-mode .notification-item.active .stagger:nth-child(1) {  
-    opacity: 1;  
-    transform: translateY(0);  
-    transition-delay: 0.1s;  
-}  
-
-.desktop-mode .notification-item.active .stagger:nth-child(2) {  
-    opacity: 1;  
-    transform: translateY(0);  
-    transition-delay: 0.2s;  
-}  
-
-/* ========================
-   THEMES - GRADIENT & GLOW UPGRADE
-   ======================== */
-   
-/* Success */  
-.success .icon-blob {   
-    background: linear-gradient(135deg, #34c759, #248a3d);   
-}  
-.desktop-mode .success .progress-bar {   
-    background: linear-gradient(to top, #34c759, #8affb1);   
-    box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
-}  
-.mobile-mode .success .progress-bar {   
-    background: #34c759;   
-}  
-  
-/* Error */  
-.error .icon-blob {   
-    background: linear-gradient(135deg, #ff3b30, #c0261d);   
-}  
-.desktop-mode .error .progress-bar {   
-    background: linear-gradient(to top, #ff3b30, #ff867f);   
-    box-shadow: 0 0 8px rgba(255, 59, 48, 0.4);
-}  
-.mobile-mode .error .progress-bar {   
-    background: #ff3b30;   
-}  
-  
-/* Warning */  
-.warning .icon-blob {   
-    background: linear-gradient(135deg, #ff9500, #c97600);   
-}  
-.desktop-mode .warning .progress-bar {   
-    background: linear-gradient(to top, #ff9500, #ffd07d);   
-    box-shadow: 0 0 8px rgba(255, 149, 0, 0.4);
-}  
-.mobile-mode .warning .progress-bar {   
-    background: #ff9500;   
-}  
-  
-/* Info */  
-.info .icon-blob {   
-    background: linear-gradient(135deg, #007aff, #0056b3);   
-}  
-.desktop-mode .info .progress-bar {   
-    background: linear-gradient(to top, #007aff, #5ac8fa);   
-    box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
-}  
-.mobile-mode .info .progress-bar {   
-    background: #007aff;   
+    /* ✅ GANTI dengan background solid */
+    background: var(--notif-light); /* Menggunakan variabel yang sudah diubah */
 }
 
+.notification-container {        
+    position: fixed;        
+    inset: 0;        
+    pointer-events: none;        
+    z-index: 10000;        
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;        
+}        
+
+/* ========================         
+   MOBILE: FLUID MORPHING V5 - STABIL & HALUS    
+   ======================== */        
+.mobile-mode .notification-item {        
+    position: absolute;        
+    left: 50%;        
+    top: 0;        
+    
+    /* 2️⃣ SHADOW MOBILE – DARI "GLASS" KE "TOON" */
+    box-shadow: 
+        0 6px 0 rgba(0,0,0,0.12),
+        0 14px 0 rgba(0,0,0,0.06);
+    
+    /* 3️⃣ OUTLINE – WAJIB BIAR KARTUN */
+    border: 1.5px solid rgba(0,0,0,0.12);
+    
+    display: flex;        
+    align-items: center;        
+    pointer-events: auto;        
+    overflow: hidden;        
+            
+    /* Transisi lebih stabil & smart dengan morphing */    
+    transition:     
+        transform 0.4s var(--slide-ease),         
+        width 0.4s var(--morph-ease),            
+        height 0.4s var(--morph-ease),           
+        border-radius 0.4s var(--morph-ease),     
+        opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);    
+}        
+
+.mobile-mode .notification-item.spawn {         
+    width: 40px;         
+    height: 40px;         
+    border-radius: 50%;         
+    opacity: 0;         
+    /* Muncul dari atas dengan jarak yang wajar */    
+    transform: translate(-50%, -60px) scale(0.86);         
+}        
+
+.mobile-mode .notification-item.active {         
+    width: 370px;         
+    max-width: 90vw;        
+    height: 78px;         
+    
+    /* 4️⃣ BORDER RADIUS MOBILE ACTIVE */
+    border-radius: 22px; /* Jangan terlalu jelly */
+    
+    opacity: 1;         
+    /* Tidak terlalu bounce, landing yang stabil */    
+    transform: translate(-50%, 25px) scale(1);         
+    z-index: 100;         
+}        
+
+.mobile-mode .notification-item.layer-1 {         
+    width: 330px;         
+    max-width: 85vw;        
+    height: 68px;         
+    
+    /* 4️⃣ BORDER RADIUS MOBILE LAYER 1 */
+    border-radius: 20px;
+    
+    opacity: 0.6;         
+    transform: translate(-50%, 50px) scale(0.95);         
+    z-index: 90;         
+}        
+
+.mobile-mode .notification-item.layer-2 {         
+    width: 290px;         
+    max-width: 80vw;        
+    height: 58px;         
+    
+    /* 4️⃣ BORDER RADIUS MOBILE LAYER 2 */
+    border-radius: 18px;
+    
+    opacity: 0.3;         
+    transform: translate(-50%, 70px) scale(0.9);         
+    z-index: 80;         
+}        
+
+/* ANIMASI KELUAR MOBILE - DENGAN MORPHING SMOOTH */    
+.mobile-mode .notification-item.exit {         
+    /* MORPHING HALUS: kembali ke bentuk lebih kecil */    
+    width: 320px;    
+    height: 72px;    
+    border-radius: 32px;    
+    transform: translate(-50%, -15px) scale(0.95);         
+    opacity: 0;         
+    /* Transisi yang sama untuk consistency */    
+    transition:     
+        transform 0.4s var(--exit-ease),    
+        width 0.4s var(--morph-ease),    
+        height 0.4s var(--morph-ease),    
+        border-radius 0.4s var(--morph-ease),    
+        opacity 0.35s var(--exit-ease);    
+}        
+
+/* Progress Mobile */        
+.mobile-mode .progress-track {        
+    position: absolute;        
+    bottom: 0;        
+    left: 0;        
+    width: 100%;        
+    height: 3px;        
+    background: rgba(0,0,0,0.04);        
+    overflow: hidden;        
+}        
+
+.mobile-mode .progress-bar {         
+    height: 100%;         
+    width: 100%;         
+    transform-origin: left;        
+    transform: scaleX(1);        
+}        
+
+/* ========================         
+   DESKTOP: SLIDE SMOOTH & STABIL    
+   ======================== */        
+.desktop-mode .notification-item {        
+    position: absolute;        
+    right: 40px;        
+    bottom: 40px;        
+    width: 390px;        
+    max-width: 90vw;        
+    height: 145px;        
+    
+    /* 4️⃣ BORDER RADIUS DESKTOP */
+    border-radius: 18px;
+    
+    background: var(--desktop-bg-light);        
+    
+    /* 3️⃣ OUTLINE DESKTOP – LEBIH TEBAL */
+    border: 2px solid var(--desktop-border-light);        
+    
+    /* 2️⃣ SHADOW DESKTOP – DARI "GLASS" KE "TOON" */
+    /* 🚨 Hilangkan inset shadow → itu sumber realisme */
+    box-shadow: 
+        0 8px 0 rgba(0,0,0,0.14),
+        0 16px 0 rgba(0,0,0,0.08);
+    
+    color: var(--desktop-text-light);        
+    
+    display: flex;        
+    align-items: center;        
+    pointer-events: auto;        
+    transform-origin: center right;    
+    
+    /* ANIMASI DESKTOP - SLIDE PURIST */
+    /* HANYA slide dan opacity yang dianimasikan */
+    transition: 
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.5s cubic-bezier(0.2, 0.9, 0.1, 1.1),
+        filter 0.5s ease;
+        
+    padding-right: 44px;        
+    padding-left: 6px;        
+}        
+
+/* ANIMASI MASUK - SLIDE FROM RIGHT DENGAN BOUNCE */
+.desktop-mode .notification-item.spawn {         
+    /* Start: di luar layar kanan, dengan blur */
+    transform: translateX(400px) translateY(var(--y-offset)) scale(0.9);
+    opacity: 0;
+    filter: blur(4px);
+}        
+
+.desktop-mode .notification-item.active {         
+    /* End: posisi final, FULL opacity */
+    transform: translateX(0) translateY(var(--y-offset)) scale(1);
+    opacity: 1;
+    filter: blur(0);
+}        
+
+/* ANIMASI KELUAR - SLIDE TO RIGHT DENGAN SQUASH EFFECT */
+.desktop-mode .notification-item.exit {         
+    /* Keluar: slide ke kanan dengan efek kartun */
+    transform: translateX(300px) translateY(var(--y-offset)) scale(0.85);
+    opacity: 0;
+    filter: blur(6px);
+    
+    /* ANIMASI KELUAR: lebih cepat dan ekspresif */
+    transition: 
+        transform 0.45s cubic-bezier(0.4, 0, 0.8, 0.4),
+        opacity 0.35s cubic-bezier(0.4, 0, 1, 1),
+        filter 0.4s ease;
+}        
+
+/* Progress Desktop - DISESUAIKAN UNTUK CARTOON STYLE */    
+.desktop-mode .progress-track {        
+    position: absolute;        
+    top: 30px;        
+    bottom: 30px;        
+    right: 18px;        
+    width: 8px;     
+    
+    /* Ubah dari efek kaca ke solid */
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    
+    /* Hapus backdrop-filter untuk efek kaca */    
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    
+    box-shadow:     
+        0 2px 0 rgba(0, 0, 0, 0.06); /* Shadow sederhana */
+    
+    border-radius: 10px;        
+    overflow: hidden;        
+}        
+
+.desktop-mode .progress-bar {        
+    width: 100%;        
+    height: 100%;        
+    transform-origin: bottom;        
+    transform: scaleY(1);        
+    border-radius: 10px;    
+    /* Hapus efek kaca untuk progress bar */    
+    position: relative;    
+    overflow: hidden;    
+    transition: transform 0.1s linear;    
+}    
+
+.desktop-mode .notification-item.exit .progress-bar {    
+    transition: transform 0.15s linear;    
+}    
+
+/* Hapus efek kaca tambahan untuk progress bar */    
+.desktop-mode .progress-bar::after {    
+    content: '';    
+    position: absolute;    
+    top: 0;    
+    left: 0;    
+    right: 0;    
+    height: 30%;    
+    background: linear-gradient(to bottom,     
+        rgba(255, 255, 255, 0.6) 0%,     
+        rgba(255, 255, 255, 0.3) 100%); /* Kurangi opacity untuk kartun */    
+    border-radius: 10px 10px 0 0;    
+    pointer-events: none;    
+}    
+
+/* ========================         
+   CONTENT REFINEMENT    
+   ======================== */        
+.notification-icon {         
+    min-width: 70px;         
+    display: flex;         
+    justify-content: center;         
+}        
+
+.desktop-mode .notification-icon {        
+    min-width: 86px;        
+    padding-left: 10px;        
+}        
+
+.icon-blob {        
+    width: 54px;        
+    height: 54px;        
+    border-radius: 100px;        
+    display: flex;        
+    align-items: center;        
+    justify-content: center;        
+    color: white;        
+    
+    /* 5️⃣ ICON BLOB – DARI "REAL" KE "TOY" */
+    box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+    
+    font-size: 24px;      
+}        
+
+.desktop-mode .icon-blob {        
+    width: 66px;        
+    height: 66px;        
+    border-radius: 22px;        
+    font-size: 28px;      
+    
+    /* 5️⃣ ICON BLOB DESKTOP – DARI "REAL" KE "TOY" */
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+}        
+
+.notification-text {         
+    flex: 1;         
+    padding: 0 12px;         
+}        
+
+.desktop-mode .notification-text {        
+    padding-right: 28px;        
+}        
+
+/* Typography */        
+.text-small {         
+    font-size: 11px;         
+    font-weight: 700;         
+    text-transform: uppercase;         
+    letter-spacing: 0.8px;        
+    margin-bottom: 2px;         
+}        
+
+.desktop-mode .text-small {        
+    font-size: 13px;        
+    letter-spacing: 0.8px;        
+    margin-bottom: 5px;        
+}        
+
+.text-main {         
+    font-size: 15px;         
+    font-weight: 600;         
+    line-height: 1.35;         
+}        
+
+.desktop-mode .text-main {        
+    font-size: 19px;        
+    font-weight: 700;        
+    line-height: 1.4;        
+}        
+
+.mobile-mode .text-small { color: rgba(0,0,0,0.55); }        
+.mobile-mode .text-main { color: #1a1a1a; }        
+.mobile-mode .notification-item:not(.active) .notification-text { opacity: 0; }        
+
+.desktop-mode .text-small { color: var(--desktop-subtext-light); }        
+.desktop-mode .text-main { color: var(--desktop-text-light); }        
+
+/* TEKS STAGGER - Masuk dan Keluar Sinkron */    
+.desktop-mode .stagger {        
+    opacity: 0;        
+    transform: translateX(20px);        
+    transition: 
+        opacity 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+        transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2);        
+}        
+
+.desktop-mode .notification-item.active .stagger:nth-child(1) {        
+    opacity: 1;        
+    transform: translateX(0);        
+    transition-delay: 0.25s;        
+}        
+
+.desktop-mode .notification-item.active .stagger:nth-child(2) {        
+    opacity: 1;        
+    transform: translateX(0);        
+    transition-delay: 0.35s;        
+}        
+
+/* TEKS KELUAR - Keluar lebih dulu sebelum container */    
+.desktop-mode .notification-item.exit .stagger {    
+    opacity: 0;        
+    transform: translateX(10px);        
+    transition: 
+        opacity 0.2s ease-out,
+        transform 0.25s ease-out;    
+    transition-delay: 0s;    
+}    
+
+/* ========================      
+   THEMES - GRADIENT & CARTOON COLORS     
+   ======================== */        
+.success .icon-blob { background: linear-gradient(135deg, #34c759, #248a3d); }        
+.desktop-mode .success .progress-bar {         
+    background: linear-gradient(to top,     
+        rgba(52, 199, 89, 0.95),     
+        rgba(138, 255, 177, 0.9));         
+    box-shadow:     
+        0 2px 0 rgba(52, 199, 89, 0.4); /* Shadow sederhana */    
+}        
+.mobile-mode .success .progress-bar { background: #34c759; }        
+
+.error .icon-blob { background: linear-gradient(135deg, #ff3b30, #c0261d); }        
+.desktop-mode .error .progress-bar {         
+    background: linear-gradient(to top,     
+        rgba(255, 59, 48, 0.95),     
+        rgba(255, 134, 127, 0.9));         
+    box-shadow:     
+        0 2px 0 rgba(255, 59, 48, 0.4); /* Shadow sederhana */    
+}        
+.mobile-mode .error .progress-bar { background: #ff3b30; }        
+
+.warning .icon-blob { background: linear-gradient(135deg, #ff9500, #c97600); }        
+.desktop-mode .warning .progress-bar {         
+    background: linear-gradient(to top,     
+        rgba(255, 149, 0, 0.95),     
+        rgba(255, 208, 125, 0.9));         
+    box-shadow:     
+        0 2px 0 rgba(255, 149, 0, 0.4); /* Shadow sederhana */    
+}        
+.mobile-mode .warning .progress-bar { background: #ff9500; }        
+
+.info .icon-blob { background: linear-gradient(135deg, #007aff, #0056b3); }        
+.desktop-mode .info .progress-bar {         
+    background: linear-gradient(to top,     
+        rgba(0, 122, 255, 0.95),     
+        rgba(90, 200, 250, 0.9));         
+    box-shadow:     
+        0 2px 0 rgba(0, 122, 255, 0.4); /* Shadow sederhana */    
+}        
+.mobile-mode .info .progress-bar { background: #007aff; }    
+
+/* ========================      
+   ADDITIONAL STABILIZATION    
+   ======================== */    
+/* Mencegah flash saat transition */    
+.mobile-mode .notification-item,    
+.desktop-mode .notification-item {    
+    backface-visibility: hidden;    
+    -webkit-backface-visibility: hidden;    
+    transform: translateZ(0);    
+}    
+
+/* Smooth scroll untuk container jika overflow */    
+.notification-container {    
+    overflow: hidden;    
+}    
+
+/* Smooth text fade untuk mobile */    
+.mobile-mode .notification-text {    
+    transition: opacity 0.2s ease 0.12s; /* Dipercepat */    
+}    
+
+/* Optimasi text animasi keluar dengan morphing */    
+.mobile-mode .notification-item.exit .notification-text {    
+    opacity: 0;    
+    transform: translateY(4px);    
+    transition: 
+        opacity 0.15s ease, /* Dipercepat */    
+        transform 0.2s ease; /* Dipercepat */    
+}    
+
+/* Animasi progress bar */    
+.mobile-mode .progress-bar {    
+    transition: transform 0.1s linear;    
+}    
+
+/* Stabilisasi tambahan untuk layer mobile */    
+.mobile-mode .notification-item.layer-1,    
+.mobile-mode .notification-item.layer-2 {    
+    transition:     
+        transform 0.5s var(--slide-ease),    
+        width 0.5s var(--morph-ease),    
+        height 0.5s var(--morph-ease),    
+        border-radius 0.5s var(--morph-ease),    
+        opacity 0.35s ease;    
+}  
+
+/* OFFSET BERBASIS POSISI - Untuk efek stagger antar notifikasi */    
+.desktop-mode .notification-item:nth-child(1) { --y-offset: 0px; }    
+.desktop-mode .notification-item:nth-child(2) { --y-offset: 160px; }    
+.desktop-mode .notification-item:nth-child(3) { --y-offset: 320px; }    
+.desktop-mode .notification-item:nth-child(4) { --y-offset: 480px; }    
+
+/* DELAY MASUK UNTUK NOTIFIKASI BERURUTAN */    
+.desktop-mode .notification-item.spawn:nth-child(1) { transition-delay: 0s; }    
+.desktop-mode .notification-item.spawn:nth-child(2) { transition-delay: 0.08s; }    
+.desktop-mode .notification-item.spawn:nth-child(3) { transition-delay: 0.16s; }    
+.desktop-mode .notification-item.spawn:nth-child(4) { transition-delay: 0.24s; }    
+
+.desktop-mode .notification-item.active:nth-child(1) { transition-delay: 0.1s; }    
+.desktop-mode .notification-item.active:nth-child(2) { transition-delay: 0.18s; }    
+.desktop-mode .notification-item.active:nth-child(3) { transition-delay: 0.26s; }    
+.desktop-mode .notification-item.active:nth-child(4) { transition-delay: 0.34s; }    
+
+/* DELAY KELUAR UNTUK NOTIFIKASI BERURUTAN */    
+.desktop-mode .notification-item.exit:nth-child(1) { transition-delay: 0.05s; }    
+.desktop-mode .notification-item.exit:nth-child(2) { transition-delay: 0.1s; }    
+.desktop-mode .notification-item.exit:nth-child(3) { transition-delay: 0.15s; }    
+.desktop-mode .notification-item.exit:nth-child(4) { transition-delay: 0.2s; }    
+
+/* MEMASTIKAN TIDAK ADA ANIMASI LAIN YANG MENGINTERFERENSI */    
+.desktop-mode .notification-item,    
+.desktop-mode .notification-item.spawn,    
+.desktop-mode .notification-item.active,    
+.desktop-mode .notification-item.exit {    
+    width: 390px !important;    
+    height: 145px !important;    
+    border-radius: 18px !important;    
+}    
+
+/* Pastikan transform origin konsisten */    
+.desktop-mode .notification-item {    
+    transform-origin: center right !important;    
+}    
+
+/* Mencegah efek morphing/mutasi bentuk */    
+.desktop-mode .notification-item,    
+.desktop-mode .notification-item.spawn,    
+.desktop-mode .notification-item.active,    
+.desktop-mode .notification-item.exit {    
+    width: 390px !important;    
+    height: 145px !important;    
+    border-radius: 18px !important;    
+}    
+
+/* ========================
+   FIX: DESKTOP ANIMATIONS RESTORED
+   ======================== */
+
+/* Reset transisi untuk desktop mode - HANYA untuk properti tertentu */
+.desktop-mode .notification-item {
+    /* ✅ HANYA animasikan transform, opacity dan filter */
+    transition: 
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.5s cubic-bezier(0.2, 0.9, 0.1, 1.1),
+        filter 0.5s ease;
+}
+
+/* Pastikan elemen lain tidak memiliki transisi yang mengganggu */
+.desktop-mode .icon-blob {
+    transition: transform 0.3s ease;
+}
+
+.desktop-mode .progress-track {
+    transition: none;
+}
+
+/* 3️⃣ PERBAIKI ANIMASI MASUK YANG LEBIH MENARIK: */
+.desktop-mode .notification-item.spawn {
+    transform: translateX(400px) translateY(var(--y-offset)) scale(0.9);
+    opacity: 0;
+    filter: blur(4px);
+}
+
+.desktop-mode .notification-item.active {
+    transform: translateX(0) translateY(var(--y-offset)) scale(1);
+    opacity: 1;
+    filter: blur(0);
+}
+
+/* 4️⃣ PERBAIKI ANIMASI KELUAR YANG LEBIH DRAMATIS: */
+.desktop-mode .notification-item.exit {
+    transform: translateX(300px) translateY(var(--y-offset)) scale(0.85);
+    opacity: 0;
+    filter: blur(6px);
+    
+    /* Animasi keluar lebih cepat dan ekspresif */
+    transition: 
+        transform 0.45s cubic-bezier(0.4, 0, 0.8, 0.4),
+        opacity 0.35s cubic-bezier(0.4, 0, 1, 1),
+        filter 0.4s ease;
+}
+
+/* 5️⃣ TAMBAHKAN "BOUNCE" RINGAN SAAT MASUK: */
+@keyframes desktopEntryBounce {
+    0% {
+        transform: translateX(400px) translateY(var(--y-offset)) scale(0.9);
+    }
+    70% {
+        transform: translateX(-15px) translateY(var(--y-offset)) scale(1.02);
+    }
+    100% {
+        transform: translateX(0) translateY(var(--y-offset)) scale(1);
+    }
+}
+
+.desktop-mode .notification-item.active {
+    animation: desktopEntryBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 6️⃣ TAMBAHKAN EFEK "SQUASH" RINGAN SAAT KELUAR: */
+@keyframes desktopExitSquash {
+    0% {
+        transform: translateX(0) translateY(var(--y-offset)) scale(1, 1);
+    }
+    30% {
+        transform: translateX(50px) translateY(var(--y-offset)) scale(1.05, 0.95);
+    }
+    100% {
+        transform: translateX(300px) translateY(var(--y-offset)) scale(0.85, 0.85);
+    }
+}
+
+.desktop-mode .notification-item.exit {
+    animation: desktopExitSquash 0.45s cubic-bezier(0.4, 0, 0.8, 0.4);
+}
+
+/* 7️⃣ OPTIONAL: Efek "wiggle" kecil saat hover (kartun style) */
+.desktop-mode .notification-item:not(.exit):hover {
+    transform: translateX(0) translateY(var(--y-offset)) rotate(-0.5deg);
+    transition: 
+        transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+        opacity 0.5s cubic-bezier(0.2, 0.9, 0.1, 1.1),
+        filter 0.5s ease;
+}
+
+/* 8️⃣ TAMBAHKAN KEYFRAMES UNTUK ICON BOUNCE */
+@keyframes iconBounce {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+/* Icon sedikit bounce saat notifikasi aktif */
+.desktop-mode .notification-item.active .icon-blob {
+    animation: iconBounce 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) 0.3s;
+}
+
+/* OVERRIDE FORCE FIX - untuk memastikan animasi berjalan */
+.desktop-mode .notification-item {
+    transition: 
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.5s cubic-bezier(0.2, 0.9, 0.1, 1.1),
+        filter 0.5s ease !important;
+}
+
+/* Responsif untuk layar lebih kecil */
+@media (max-width: 768px) {
+    .desktop-mode .notification-item {
+        right: 20px;
+        bottom: 20px;
+        width: 350px;
+        height: 130px;
+    }
+    
+    .desktop-mode .notification-item.spawn {
+        transform: translateX(350px) translateY(var(--y-offset)) scale(0.9);
+    }
+    
+    .desktop-mode .notification-item.exit {
+        transform: translateX(250px) translateY(var(--y-offset)) scale(0.85);
+    }
+}
+
+/* Animasi untuk dark mode */
+@media (prefers-color-scheme: dark) {
+    .desktop-mode .notification-item {
+        background: rgba(30, 30, 32, 0.96);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #f5f5f7;
+    }
+    
+    .desktop-mode .text-small {
+        color: rgba(235, 235, 245, 0.7);
+    }
+    
+    .desktop-mode .text-main {
+        color: #ffffff;
+    }
+    
+    .desktop-mode .progress-track {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+}
