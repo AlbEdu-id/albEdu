@@ -3,86 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Meta SEO Super Lengkap -->
-    <title>AlbEdu - Sistem Manajemen Pendidikan Berbasis Teknologi</title>
-    <meta name="description" content="AlbEdu adalah platform manajemen pendidikan profesional dengan sistem autentikasi dan proteksi akses berbasis role untuk institusi pendidikan. Sistem login aman dengan Google Authentication.">
-    <meta name="keywords" content="AlbEdu, pendidikan, sistem pendidikan, manajemen sekolah, login pendidikan, autentikasi google, firebase, platform edukasi">
+
+    <!-- SEO -->
+    <title>AlbEdu - Sistem Manajemen Pendidikan</title>
+    <meta name="description" content="AlbEdu adalah platform manajemen pendidikan berbasis teknologi dengan sistem autentikasi aman dan modern.">
+    <meta name="keywords" content="AlbEdu, sistem pendidikan, manajemen sekolah, platform edukasi">
     <meta name="author" content="AlbEdu">
     <meta name="robots" content="index, follow">
-    
-    <!-- Open Graph / Social Media -->
+
+    <!-- Open Graph -->
     <meta property="og:title" content="AlbEdu - Sistem Manajemen Pendidikan">
-    <meta property="og:description" content="Platform manajemen pendidikan profesional dengan sistem autentikasi dan proteksi akses berbasis role.">
+    <meta property="og:description" content="Platform manajemen pendidikan modern dan profesional.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://username.github.io/albedu">
-    
-    <!-- Meta Theme Color -->
+
+    <!-- Theme -->
     <meta name="theme-color" content="#2563eb">
-    
+
     <!-- Favicon -->
-    <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
-    
-    <!-- Redirect ke halaman login -->
+    <link rel="icon" href="assets/images/favicon.ico">
+
+    <!-- CSS Redirect Page -->
+    <link rel="stylesheet" href="assets/css/redirect.css">
+
+    <!-- Auto Redirect -->
     <meta http-equiv="refresh" content="3;url=login.html">
-    
-    <style>
-        /* Minimal styling hanya untuk halaman redirect */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        .container {
-            max-width: 600px;
-        }
-        h1 {
-            color: #2563eb;
-            margin-bottom: 20px;
-        }
-        .loading {
-            margin-top: 30px;
-        }
-        .spinner {
-            border: 4px solid rgba(37, 99, 235, 0.1);
-            border-radius: 50%;
-            border-top: 4px solid #2563eb;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
+
+    <main class="container">
         <h1>AlbEdu</h1>
         <p>Sistem Manajemen Pendidikan Berbasis Teknologi</p>
         <p>Mengarahkan Anda ke halaman login...</p>
-        
+
         <div class="loading">
             <div class="spinner"></div>
             <p>Sedang memuat sistem AlbEdu</p>
         </div>
-        
-        <p style="margin-top: 40px; font-size: 0.9rem; color: #64748b;">
-            Jika tidak terjadi pengalihan otomatis, 
-            <a href="login.html" style="color: #2563eb; text-decoration: none;">klik di sini</a> 
+
+        <p>
+            Jika tidak terjadi pengalihan otomatis,
+            <a href="login.html">klik di sini</a>
             untuk menuju halaman login.
         </p>
-    </div>
-    
-    <!-- 🔥 PERBAIKAN: Tidak perlu script untuk redirect page ini -->
+    </main>
+
 </body>
 </html>
