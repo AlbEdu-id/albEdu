@@ -1,5 +1,5 @@
-// ByteWard UI Module v1.2.1 - Refactored (Notification System Outsourced)
-console.log('🎨 Memuat UI Module v1.2.1 (Refactored) - Dependensi eksternal: notification.js');
+// ByteWard UI Module v1.2.1 - Refactored (Notification System Removed)
+console.log('🎨 Memuat UI Module v1.2.1 (Refactored) - Dependensi notifikasi dihapus');
 
 // =======================
 // Configuration
@@ -8,7 +8,7 @@ const UI_CONFIG = {
     version: '1.2.1',
     features: { 
         profileSystem: true,
-        notificationSystem: true, // Dependency on notification.js
+        notificationSystem: false, 
         loadingSystem: true,
         errorSystem: true, 
         modalSystem: true,
@@ -35,7 +35,6 @@ function createProfileButton() {
     button.id = 'profileTrigger';
     button.setAttribute('aria-label', 'Open profile panel');
     
-    // Avatar image
     const avatarUrl = (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || 
                      ((window.Auth && window.Auth.currentUser) ? 
                       generateDefaultAvatar(window.Auth.currentUser.email) : 
@@ -51,7 +50,6 @@ function createProfileButton() {
     
     button.appendChild(img);
 
-    // Profile completion indicator
     if (window.Auth && window.Auth.userData && !window.Auth.userData.profilLengkap) {
         const indicator = document.createElement('div');
         indicator.className = 'profile-indicator';
@@ -60,7 +58,6 @@ function createProfileButton() {
         button.appendChild(indicator);
     }
 
-    // Tooltip
     const tooltip = document.createElement('div');
     tooltip.className = 'profile-tooltip';
     tooltip.style.cssText = `
@@ -245,7 +242,6 @@ function createProfilePanel() {
     editSection.className = 'edit-section';
     editSection.style.cssText = `background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;`;
 
-    // Name Input
     const nameInputGroup = document.createElement('div');
     nameInputGroup.className = 'name-input-group';
     nameInputGroup.style.cssText = `margin-bottom: 24px;`;
@@ -281,7 +277,6 @@ function createProfilePanel() {
     nameInputGroup.appendChild(nameLabel);
     nameInputGroup.appendChild(nameInput);
 
-    // Avatar Options
     const avatarOptionsContainer = document.createElement('div');
     avatarOptionsContainer.className = 'avatar-options';
     avatarOptionsContainer.style.cssText = `margin-bottom: 24px;`;
@@ -302,7 +297,6 @@ function createProfilePanel() {
     avatarOptionsContainer.appendChild(optionTitle);
     avatarOptionsContainer.appendChild(optionGrid);
 
-    // Custom Upload
     const customUpload = document.createElement('div');
     customUpload.className = 'custom-upload';
     customUpload.style.cssText = `margin-bottom: 24px;`;
@@ -355,13 +349,11 @@ function createProfilePanel() {
     customUpload.appendChild(uploadLabel);
     customUpload.appendChild(previewContainer);
 
-    // Status Message
     const statusMessage = document.createElement('div');
     statusMessage.className = 'status-message';
     statusMessage.id = 'statusMessage';
     statusMessage.style.cssText = `display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`;
 
-    // Actions
     const profileActions = document.createElement('div');
     profileActions.className = 'profile-actions';
     profileActions.style.cssText = `display: flex; gap: 12px; margin-top: 24px;`;
@@ -578,12 +570,12 @@ function handleAvatarUpload(event) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-        if (window.notify) window.notify.error('Error', 'Hanya file gambar yang diperbolehkan');
+        showStatus('Hanya file gambar yang diperbolehkan', 'error');
         return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-        if (window.notify) window.notify.error('Error', 'Ukuran gambar maksimal 2MB');
+        showStatus('Ukuran gambar maksimal 2MB', 'error');
         return;
     }
 
@@ -612,7 +604,7 @@ function handleAvatarUpload(event) {
         };
         reader.readAsDataURL(file);
     } catch (error) {
-        if (window.notify) window.notify.error('Error', 'Gagal membaca file');
+        showStatus('Gagal membaca file', 'error');
         console.error('Upload error:', error);
     }
 }
@@ -743,10 +735,8 @@ async function saveProfile() {
         return;
     }
 
-    // Cek koneksi internet
     if (!navigator.onLine) {
         showStatus('Anda sedang offline. Periksa koneksi internet.', 'error');
-        if (window.notify) window.notify.error('Offline', 'Tidak ada koneksi internet.');
         return;
     }
 
@@ -754,14 +744,11 @@ async function saveProfile() {
     if (state.isLoading || !state.hasChanges) return;
 
     try {
-        // Set loading
         window.Auth.profileState = Object.assign({}, state, { isLoading: true });
         updateSaveButtonState();
 
-        // Siapkan payload update
         const updates = {};
         
-        // 1. Update Nama
         if (state.tempName !== undefined && state.tempName !== window.Auth.userData.nama) {
             const cleanName = state.tempName.trim();
             if (cleanName.length > 0) {
@@ -771,7 +758,6 @@ async function saveProfile() {
             }
         }
 
-        // 2. Update Avatar
         let newAvatarUrl = window.Auth.userData.foto_profil;
         if (state.selectedAvatar === 'custom' && state.customAvatar) {
             newAvatarUrl = state.customAvatar;
@@ -784,29 +770,22 @@ async function saveProfile() {
             updates.foto_profil = newAvatarUrl;
         }
 
-        // 3. Production Logic: Hitung profilLengkap
-        // Logika ini harus SAMA PERSIS dengan Firestore Rules
         const finalName = updates.nama || window.Auth.userData.nama || '';
         const finalAvatar = updates.foto_profil || window.Auth.userData.foto_profil || '';
         
-        // Validasi Ketat: Nama harus string > 0 char, Avatar harus string > 0 char
         const isNameValid = typeof finalName === 'string' && finalName.trim().length > 0;
         const isAvatarValid = typeof finalAvatar === 'string' && finalAvatar.trim().length > 0;
         
         updates.profilLengkap = isNameValid && isAvatarValid;
         updates.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
-        // PRODUCTION SECURITY: Hapus field immutable yang tidak boleh dikirim
-        // Ini mencegah error permission jika client salah mengirim data
         delete updates.email;
         delete updates.peran;
         delete updates.id;
         delete updates.createdAt;
 
-        // Simpan ke Firestore
         await firebaseDb.collection('users').doc(window.Auth.currentUser.uid).update(updates);
 
-        // Update local state
         window.Auth.userData = Object.assign({}, window.Auth.userData, updates);
         window.Auth.profileState = Object.assign({}, state, {
             isProfileComplete: updates.profilLengkap,
@@ -814,7 +793,6 @@ async function saveProfile() {
             isLoading: false
         });
 
-        // Update UI
         updateProfileButton();
         
         const currentAvatar = document.querySelector('.current-avatar');
@@ -828,11 +806,6 @@ async function saveProfile() {
 
         showStatus('Profil berhasil disimpan!', 'success');
         
-        if (window.notify) {
-            window.notify.success('Sukses', 'Profil berhasil disimpan!');
-        }
-
-        // Auto-close jika profil lengkap
         if (updates.profilLengkap && !state.autoCloseTriggered) {
             window.Auth.profileState = Object.assign({}, window.Auth.profileState, { autoCloseTriggered: true });
             setTimeout(() => {
@@ -844,7 +817,6 @@ async function saveProfile() {
     } catch (error) {
         console.error('Save profile error:', error);
         
-        // Handle pesan error spesifik
         let userMessage = 'Gagal menyimpan profil.';
         if (error.code === 'permission-denied') {
             userMessage = 'Anda tidak memiliki izin untuk mengubah data ini.';
@@ -853,10 +825,6 @@ async function saveProfile() {
         }
         
         showStatus(userMessage, 'error');
-        
-        if (window.notify) {
-            window.notify.error('Gagal', userMessage);
-        }
         
         if (window.Auth && window.Auth.profileState) {
             window.Auth.profileState = Object.assign({}, window.Auth.profileState, { isLoading: false });
@@ -1129,10 +1097,7 @@ function injectLoadingCSS() {
 }
 
 function showError(message, options = {}) {
-    const { title = 'System Error', duration = 5000, showNotification = true, showToast = false } = options;
     console.error('ByteWard Error:', message);
-    if (showNotification && window.notify) window.notify.error(title, message, duration);
-    if (showToast && window.UI && window.UI.Toast) window.UI.Toast.error(message, { duration });
 }
 
 function generateDefaultAvatar(seed) {
@@ -1181,12 +1146,6 @@ function initializeUISystem() {
     try {
         injectProfileCSS();
         
-        // Notification System sekarang disediakan oleh notification.js
-        // UI hanya menunggu sampai sistem notifikasi siap
-        window.addEventListener('notification:ready', () => {
-            console.log('🔔 Notification System ready (detected by UI)');
-        });
-        
         if (!window.UI.Modal) {
             window.UI.Modal = new window.ModalSystemClass();
         }
@@ -1199,40 +1158,18 @@ function initializeUISystem() {
             setTimeout(() => { createProfileButton(); console.log('✅ Profile button created'); }, 1000);
         }
         
-        window.addEventListener('error', (event) => showError(event.message, { showNotification: true }));
-        window.addEventListener('unhandledrejection', (event) => showError(event.reason?.message || 'Unhandled Promise Rejection', { showNotification: true }));
+        window.addEventListener('error', (event) => showError(event.message));
+        window.addEventListener('unhandledrejection', (event) => showError(event.reason?.message || 'Unhandled Promise Rejection'));
         console.log('✅ UI System successfully initialized');
     } catch (error) {
         console.error('❌ Failed to initialize UI System:', error);
-        showError(`UI System initialization failed: ${error.message}`, { showNotification: false });
+        showError(`UI System initialization failed: ${error.message}`);
     }
 }
 
 window.UI = window.UI || {};
 Object.assign(window.UI, {
     config: UI_CONFIG, createProfileButton, updateProfileButton, createProfilePanel, initializeProfilePanel, populateAvatarOptions, selectAvatar, handleAvatarUpload, checkForChanges, showProfilePanel, hideProfilePanel, showStatus, saveProfile, updateSaveButtonState, injectProfileCSS, injectFallbackCSS, showAuthLoading, hideAuthLoading, injectLoadingCSS, showError, injectErrorCSS: injectFallbackCSS, generateDefaultAvatar, initialize: initializeUISystem
-});
-
-// ==========================================
-// PRODUCTION FIX: Notification Timing (OPSI 2)
-// ==========================================
-// Membungkus pemanggilan window.notify dengan requestAnimationFrame
-// untuk memecah burst call menjadi multi-frame rendering.
-Object.defineProperty(window, 'notify', {
-    configurable: true,
-    get() {
-        const n = window.Notifications;
-        if (!n) return {};
-
-        return {
-            success: (...args) => requestAnimationFrame(() => n.success(...args)),
-            error:   (...args) => requestAnimationFrame(() => n.error(...args)),
-            warning: (...args) => requestAnimationFrame(() => n.warning(...args)),
-            info:    (...args) => requestAnimationFrame(() => n.info(...args)),
-            show:    (opts)    => requestAnimationFrame(() => n.show(opts)),
-            clearAll: ()       => requestAnimationFrame(() => n.clearAll())
-        };
-    }
 });
 
 // Initialize on DOM ready
@@ -1246,4 +1183,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast };
 }
 
-console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready (Notification Outsourced)`);
+console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready`);
