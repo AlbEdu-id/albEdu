@@ -1,0 +1,337 @@
+/* panel.css - Responsive Admin Panel Styles */
+
+:root {
+    --primary-blue: #2563eb;
+    --primary-blue-dark: #1d4ed8;
+    --primary-blue-light: #3b82f6;
+    --light-blue: #eff6ff;
+    --gray-light: #f9fafb;
+    --gray-medium: #e5e7eb;
+    --gray-dark: #6b7280;
+    --text-dark: #111827;
+    --white: #ffffff;
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --radius: 12px;
+    --radius-lg: 20px;
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+body {
+    background-color: var(--light-blue);
+    min-height: 100vh;
+    padding: 0;
+}
+
+/* ==================== MOBILE STYLES (Default) ==================== */
+.panel-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--white);
+}
+
+/* Mobile App Header */
+.mobile-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    color: white;
+    padding: 20px 16px 30px;
+    border-radius: 0 0 30px 30px;
+    box-shadow: var(--shadow);
+    position: relative;
+    z-index: 10;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.app-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.time-display {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.user-info-mobile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar-mobile {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-details-mobile h3 {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+.user-details-mobile p {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* Mobile App Content */
+.mobile-content {
+    padding: 20px 16px;
+    position: relative;
+    top: -15px;
+}
+
+.greeting-section {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: var(--shadow-light);
+}
+
+.greeting-section h2 {
+    font-size: 1.8rem;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.greeting-section p {
+    color: var(--gray-dark);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Mobile Cards Grid */
+.mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mobile-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-light);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--gray-medium);
+    transition: var(--transition);
+}
+
+.mobile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-blue-light);
+}
+
+.card-icon-mobile {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    border-radius: 12px;
+    background: var(--light-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-blue);
+    font-size: 22px;
+}
+
+.card-content-mobile {
+    flex: 1;
+}
+
+.card-title-mobile {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.card-description-mobile {
+    font-size: 0.85rem;
+    color: var(--gray-dark);
+    line-height: 1.4;
+}
+
+.card-arrow-mobile {
+    color: var(--primary-blue);
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+/* Mobile Status Bar */
+.mobile-status {
+    text-align: center;
+    padding: 15px;
+    color: var(--gray-dark);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--gray-medium);
+    background: var(--white);
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+/* ==================== DESKTOP STYLES ==================== */
+@media (min-width: 768px) {
+    body {
+        padding: 20px;
+        background-color: var(--light-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .panel-container {
+        max-width: 800px;
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow);
+        min-height: auto;
+        overflow: hidden;
+    }
+    
+    /* Desktop Header */
+    .mobile-header {
+        border-radius: 0;
+        padding: 30px 40px;
+    }
+    
+    .header-top {
+        margin-bottom: 25px;
+    }
+    
+    .app-title {
+        font-size: 1.8rem;
+    }
+    
+    .time-display {
+        font-size: 1rem;
+    }
+    
+    .user-info-mobile {
+        justify-content: flex-start;
+    }
+    
+    .user-avatar-mobile {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .user-details-mobile h3 {
+        font-size: 1.4rem;
+    }
+    
+    .user-details-mobile p {
+        font-size: 1rem;
+    }
+    
+    /* Desktop Content */
+    .mobile-content {
+        padding: 40px;
+        top: 0;
+    }
+    
+    .greeting-section {
+        padding: 25px 30px;
+        margin-bottom: 35px;
+    }
+    
+    .greeting-section h2 {
+        font-size: 2rem;
+    }
+    
+    .greeting-section p {
+        font-size: 1.1rem;
+    }
+    
+    /* Desktop Cards Grid */
+    .mobile-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    .mobile-card {
+        padding: 25px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+        text-align: left;
+        height: 100%;
+    }
+    
+    .card-icon-mobile {
+        width: 60px;
+        height: 60px;
+        font-size: 26px;
+    }
+    
+    .card-content-mobile {
+        width: 100%;
+    }
+    
+    .card-title-mobile {
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+    }
+    
+    .card-description-mobile {
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+    }
+    
+    .card-arrow-mobile {
+        align-self: flex-end;
+        font-size: 20px;
+    }
+    
+    /* Desktop Status Bar */
+    .mobile-status {
+        position: static;
+        border-top: none;
+        padding: 20px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ==================== LARGE DESKTOP STYLES ==================== */
+@media (min-width: 1024px) {
+    .panel-container {
+        max-width: 1000px;
+    }
+    
+    .mobile-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+    
+    .mobile-card {
+        padding: 30px;
+    }
+}
