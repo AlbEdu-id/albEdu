@@ -1,278 +1,179 @@
-/* =========================================================
-   AlbEdu Login Stylesheet
-   Mobile-first, Desktop-enhanced
-   ========================================================= */
+/* =====================================================
+   AlbEdu Login – Button Morph Auth Mode (NO SPINNER)
+===================================================== */
 
+:root {
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+}
+
+/* RESET */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont,
-                 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
-:root {
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
-
-    --bg-light: #f8fafc;
-    --bg-gradient-desktop: linear-gradient(
-        120deg,
-        #eff6ff 0%,
-        #e0e7ff 45%,
-        #ffffff 100%
-    );
-
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --white: #ffffff;
-
-    --error-bg: #fef2f2;
-    --error-text: #dc2626;
-
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
-              0 2px 4px -2px rgb(0 0 0 / 0.1);
-
-    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1),
-                 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
-/* =========================================================
-   Base Layout
-   ========================================================= */
 
 body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
     min-height: 100vh;
-    background: var(--bg-light);
-    color: var(--text-main);
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow-x: hidden;
 }
 
+/* LAYOUT */
 .login-container {
     width: 100%;
-    min-height: 100vh;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    padding: 24px;
 }
-
-/* =========================================================
-   Login Card
-   ========================================================= */
 
 .login-card {
-    width: 100%;
-    max-width: 400px;
-    margin: auto;
     background: var(--white);
-    padding: 40px 24px;
+    max-width: 420px;
+    margin: auto;
+    padding: 40px 32px;
     border-radius: 24px;
-    box-shadow: var(--shadow-lg);
     text-align: center;
-    animation: fadeInScale 0.4s ease-out;
+    transition: .45s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 20px 40px rgba(0,0,0,.1);
 }
 
-/* =========================================================
-   Logo
-   ========================================================= */
+/* CARD FOCUS */
+.login-card.processing {
+    transform: scale(1.025);
+    box-shadow: 0 32px 80px rgba(37,99,235,.25);
+    pointer-events: none;
+}
 
+/* LOGO */
 .logo-container {
     margin-bottom: 32px;
 }
 
-.logo {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 12px;
-}
-
 .logo img {
-    filter: drop-shadow(0 6px 6px rgba(37, 99, 235, 0.15));
+    border-radius: 16px;
 }
 
 .logo-text {
     font-size: 1.8rem;
     font-weight: 800;
-    color: var(--primary-color);
-    letter-spacing: -0.03em;
+    color: var(--blue);
+    margin-top: 12px;
 }
 
-/* =========================================================
-   Text
-   ========================================================= */
+/* TEXT */
+.welcome-message {
+    margin-bottom: 40px;
+}
 
 .welcome-message h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 8px;
+    font-size: 1.45rem;
 }
 
 .welcome-message p {
-    font-size: 0.95rem;
-    color: var(--text-muted);
-    margin-bottom: 32px;
+    font-size: .95rem;
+    color: var(--muted);
 }
 
-/* =========================================================
-   Google Button
-   ========================================================= */
+/* =====================================================
+   BUTTON – NORMAL STATE
+===================================================== */
 
 .google-login-btn {
     width: 100%;
-    height: 56px;
+    height: 54px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    font-size: 1rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-
-    background: var(--white);
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-main);
-
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+    transition: all .45s cubic-bezier(.4,0,.2,1);
 }
 
-.google-login-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
+/* =====================================================
+   BUTTON – AUTHENTICATING (MORPH)
+===================================================== */
+
+.google-login-btn.authenticating {
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    color: white;
+    border: none;
+    width: 72%;
+    margin: 0 auto;
+    border-radius: 999px;
+    pointer-events: none;
 }
 
-.google-login-btn:active {
-    transform: translateY(0);
-    background: #e2e8f0;
+/* HIDE ICON & TEXT */
+.google-login-btn.authenticating svg,
+.google-login-btn.authenticating span {
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: .25s ease;
 }
 
-/* =========================================================
-   Loading & Error
-   ========================================================= */
-
-.loading-indicator {
-    padding: 12px;
+/* PROGRESS BAR (SILENT, NO SPINNER) */
+.google-login-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    background: rgba(255,255,255,.28);
+    border-radius: inherit;
 }
 
-.spinner {
-    width: 28px;
-    height: 28px;
-    border: 3px solid #e2e8f0;
-    border-top: 3px solid var(--primary-color);
-    border-radius: 50%;
-    margin: 0 auto 12px;
-    animation: spin 0.8s linear infinite;
+.google-login-btn.authenticating::after {
+    animation: authProgress 1.9s ease forwards;
 }
 
-.loading-indicator p {
-    font-size: 0.9rem;
-    color: var(--text-muted);
+@keyframes authProgress {
+    0%   { width: 0%; }
+    55%  { width: 78%; }
+    100% { width: 92%; }
 }
 
+/* ERROR */
 .error-message {
-    margin-top: 20px;
+    margin-top: 24px;
     padding: 14px;
-    background: var(--error-bg);
-    color: var(--error-text);
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid rgba(220, 38, 38, 0.15);
-    animation: shake 0.4s both;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: .875rem;
 }
 
-/* =========================================================
-   Footer
-   ========================================================= */
-
+/* FOOTER */
 .login-footer {
     margin-top: 32px;
     text-align: center;
 }
 
 .login-footer p {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    line-height: 1.6;
+    font-size: .8rem;
+    color: var(--muted);
 }
 
-/* =========================================================
-   Desktop Enhancement (ANTI SEPI MODE)
-   ========================================================= */
-
-@media (min-width: 1024px) {
-
-    body {
-        background: var(--bg-gradient-desktop);
-    }
-
-    .login-container {
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 96px;
-        padding: 64px;
-    }
-
+/* DESKTOP SCALE */
+@media (min-width: 768px) {
     .login-card {
-        max-width: 480px;
-        padding: 56px;
-        border-radius: 28px;
+        padding: 56px 48px;
     }
 
-    .welcome-message h2 {
-        font-size: 1.75rem;
-    }
-
-    .welcome-message p {
-        font-size: 1rem;
-    }
-}
-
-/* =========================================================
-   Animations
-   ========================================================= */
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.94);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@keyframes shake {
-    10%, 90% { transform: translateX(-1px); }
-    20%, 80% { transform: translateX(2px); }
-    30%, 50%, 70% { transform: translateX(-4px); }
-    40%, 60% { transform: translateX(4px); }
-}
-
-/* =========================================================
-   Mobile Polish
-   ========================================================= */
-
-@media (max-width: 767px) {
-    .login-card {
-        border-radius: 28px;
-    }
-
-    .google-login-btn {
-        height: 58px;
+    .logo-text {
+        font-size: 2rem;
     }
 }
