@@ -1,18 +1,19 @@
-// ByteWard UI Module v1.2.1 - Refactored (Notification System Removed)
-console.log('🎨 Memuat UI Module v1.2.1 (Refactored) - Dependensi notifikasi dihapus');
+// ByteWard UI Module v1.3.0 - Refactored (Notification System Removed) + Logout Feature
+console.log('🎨 Memuat UI Module v1.3.0 (Refactored) - Dependensi notifikasi dihapus, Logout ditambahkan');
 
 // =======================
 // Configuration
 // =======================
 const UI_CONFIG = {
-    version: '1.2.1',
+    version: '1.3.0',
     features: { 
         profileSystem: true,
         notificationSystem: false, 
         loadingSystem: true,
         errorSystem: true, 
         modalSystem: true,
-        toastSystem: true
+        toastSystem: true,
+        logoutSystem: true
     },
     defaults: {
         animationSpeed: 300,
@@ -356,17 +357,17 @@ function createProfilePanel() {
 
     const profileActions = document.createElement('div');
     profileActions.className = 'profile-actions';
-    profileActions.style.cssText = `display: flex; gap: 12px; margin-top: 24px;`;
+    profileActions.style.cssText = `display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px;`;
     
     const saveBtn = document.createElement('button');
     saveBtn.className = 'save-btn';
     saveBtn.id = 'saveProfile';
     saveBtn.disabled = true;
     saveBtn.style.cssText = `
-        flex: 1; padding: 14px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        flex: 2; padding: 14px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
         cursor: pointer; transition: all 0.2s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        position: relative; overflow: hidden;
+        position: relative; overflow: hidden; min-width: 150px;
     `;
     
     const saveText = document.createElement('span');
@@ -400,7 +401,30 @@ function createProfilePanel() {
         padding: 14px 24px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db;
         border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-width: 100px; flex: 1;
     `;
+    
+    // TOMBOL LOGOUT
+    const logoutBtn = document.createElement('button');
+    logoutBtn.className = 'logout-btn';
+    logoutBtn.id = 'logoutBtn';
+    logoutBtn.textContent = 'Log Out';
+    logoutBtn.style.cssText = `
+        padding: 14px 24px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-width: 100px; flex: 1;
+    `;
+    
+    logoutBtn.addEventListener('mouseenter', () => {
+        logoutBtn.style.transform = 'translateY(-2px)';
+        logoutBtn.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.4)';
+    });
+    
+    logoutBtn.addEventListener('mouseleave', () => {
+        logoutBtn.style.transform = 'translateY(0)';
+        logoutBtn.style.boxShadow = 'none';
+    });
     
     saveBtn.addEventListener('mouseenter', () => {
         if (!saveBtn.disabled) {
@@ -408,6 +432,7 @@ function createProfilePanel() {
             saveBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
         }
     });
+    
     saveBtn.addEventListener('mouseleave', () => {
         saveBtn.style.transform = 'translateY(0)';
         saveBtn.style.boxShadow = 'none';
@@ -415,6 +440,7 @@ function createProfilePanel() {
     
     profileActions.appendChild(saveBtn);
     profileActions.appendChild(cancelBtn);
+    profileActions.appendChild(logoutBtn);
 
     editSection.appendChild(nameInputGroup);
     editSection.appendChild(avatarOptionsContainer);
@@ -439,6 +465,9 @@ function initializeProfilePanel() {
 
     document.getElementById('closeProfile').addEventListener('click', hideProfilePanel);
     document.getElementById('cancelEdit').addEventListener('click', hideProfilePanel);
+    
+    // EVENT LISTENER UNTUK LOGOUT
+    document.getElementById('logoutBtn').addEventListener('click', confirmAndLogout);
     
     document.getElementById('profileOverlay').addEventListener('click', function(e) {
         if (e.target.id === 'profileOverlay') hideProfilePanel();
@@ -858,6 +887,73 @@ function updateSaveButtonState() {
 }
 
 // =======================
+// Logout System with Confirmation
+// =======================
+async function confirmAndLogout() {
+    try {
+        // Gunakan Modal System untuk konfirmasi
+        const confirmed = await window.UI.Modal.confirm({
+            title: 'Konfirmasi Logout',
+            message: 'Apakah Anda yakin ingin keluar dari akun ini?',
+            confirmText: 'Ya, Keluar',
+            cancelText: 'Batal'
+        });
+        
+        if (confirmed) {
+            // Tampilkan loading
+            showAuthLoading('Sedang keluar...');
+            
+            // Tutup panel profil
+            hideProfilePanel();
+            
+            // Panggil fungsi logout dari Auth system
+            if (window.Auth && window.Auth.signOut) {
+                await window.Auth.signOut();
+                
+                // Tampilkan toast sukses
+                if (window.UI.Toast) {
+                    window.UI.Toast.success('Berhasil logout!');
+                }
+                
+                // Redirect ke halaman login atau refresh
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 1500);
+                
+            } else if (window.firebaseAuth) {
+                // Fallback ke Firebase auth langsung
+                await window.firebaseAuth.signOut();
+                
+                if (window.UI.Toast) {
+                    window.UI.Toast.success('Berhasil logout!');
+                }
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                throw new Error('Auth system tidak ditemukan');
+            }
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        
+        // Tampilkan pesan error
+        if (window.UI.Toast) {
+            window.UI.Toast.error('Gagal logout: ' + (error.message || 'Terjadi kesalahan'));
+        }
+        
+        // Sembunyikan loading
+        hideAuthLoading();
+    }
+}
+
+// Fungsi logout alternatif jika diperlukan
+function logoutUser() {
+    return confirmAndLogout();
+}
+
+// =======================
 // Modal System
 // =======================
 if (!window.ModalSystemClass) {
@@ -1121,8 +1217,70 @@ function injectProfileCSS() {
             .profile-button:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); }
             .profile-image { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
             .profile-indicator { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; animation: pulse 2s infinite; }
-            @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-            @media (max-width: 768px) { .profile-button-container { top: 10px; right: 10px; } .profile-button { width: 40px; height: 40px; } }
+            
+            /* Styling untuk tombol logout */
+            .logout-btn {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 24px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                min-width: 100px;
+            }
+            
+            .logout-btn:hover:not(:disabled) {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            }
+            
+            .logout-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+            
+            .profile-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-top: 24px;
+            }
+            
+            .profile-actions .save-btn {
+                flex: 2;
+                min-width: 150px;
+            }
+            
+            .profile-actions .cancel-btn,
+            .profile-actions .logout-btn {
+                flex: 1;
+                min-width: 100px;
+            }
+            
+            @media (max-width: 480px) {
+                .profile-actions {
+                    flex-direction: column;
+                }
+                
+                .profile-actions button {
+                    width: 100%;
+                }
+            }
+            
+            @keyframes pulse { 
+                0%, 100% { transform: scale(1); } 
+                50% { transform: scale(1.1); } 
+            }
+            
+            @media (max-width: 768px) { 
+                .profile-button-container { top: 10px; right: 10px; } 
+                .profile-button { width: 40px; height: 40px; } 
+            }
         `;
         document.head.appendChild(additionalStyles);
     };
@@ -1169,7 +1327,31 @@ function initializeUISystem() {
 
 window.UI = window.UI || {};
 Object.assign(window.UI, {
-    config: UI_CONFIG, createProfileButton, updateProfileButton, createProfilePanel, initializeProfilePanel, populateAvatarOptions, selectAvatar, handleAvatarUpload, checkForChanges, showProfilePanel, hideProfilePanel, showStatus, saveProfile, updateSaveButtonState, injectProfileCSS, injectFallbackCSS, showAuthLoading, hideAuthLoading, injectLoadingCSS, showError, injectErrorCSS: injectFallbackCSS, generateDefaultAvatar, initialize: initializeUISystem
+    config: UI_CONFIG, 
+    createProfileButton, 
+    updateProfileButton, 
+    createProfilePanel, 
+    initializeProfilePanel, 
+    populateAvatarOptions, 
+    selectAvatar, 
+    handleAvatarUpload, 
+    checkForChanges, 
+    showProfilePanel, 
+    hideProfilePanel, 
+    showStatus, 
+    saveProfile, 
+    updateSaveButtonState,
+    confirmAndLogout, // Fungsi logout dengan konfirmasi
+    logoutUser, // Alias untuk logout
+    injectProfileCSS, 
+    injectFallbackCSS, 
+    showAuthLoading, 
+    hideAuthLoading, 
+    injectLoadingCSS, 
+    showError, 
+    injectErrorCSS: injectFallbackCSS, 
+    generateDefaultAvatar, 
+    initialize: initializeUISystem
 });
 
 // Initialize on DOM ready
@@ -1183,4 +1365,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast };
 }
 
-console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready`);
+console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready with Logout Feature`);
