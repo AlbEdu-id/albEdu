@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Sistem Ujian - AlbEdu</title>
+    <title>Ujian - AlbEdu</title>
     <meta name="description" content="Sistem Ujian Online AlbEdu">
     <meta name="theme-color" content="#2563eb">
     
     <link rel="icon" href="../assets/images/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="ujian.css">
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -17,48 +17,57 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-  eruda.init();
-</script>
-        <!-- load module (URUTAN PENTING) -->
-<script src="../assets/js/firebase.config.js"></script>
-<script src="../assets/js/notification.js"></script>
-<script src="../assets/js/ui.js"></script>
-<script src="../assets/js/auth.js"></script>
-<script src="../assets/js/byteward.js"></script>
-
+    <script>eruda.init();</script>
+    
+    <script src="../assets/js/firebase.config.js"></script>
+    <script src="../assets/js/notification.js"></script>
+    <script src="../assets/js/ui.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/byteward.js"></script>
 </head>
 <body>
-    <div class="development-container">
-        <div class="development-card">
-            <div class="development-icon">📝</div>
-            
-            <div class="development-message">
-                <h2>Sistem Ujian AlbEdu</h2>
-                <p>Halaman ini sedang dalam pengembangan 🤖</p>
-                <p>Sistem ujian online untuk siswa dan administrator.</p>
-                <p id="userInfo" style="margin-top: 10px; font-size: 14px; color: #666;"></p>
+    <div class="exam-container">
+        <div class="exam-card">
+            <div class="exam-header">
+                <h1>Sistem Ujian AlbEdu</h1>
+                <div class="welcome-message">
+                    <h2>Selamat datang di sistem ujian AlbEdu</h2>
+                    <p class="sub-text">Silakan masukkan Token untuk memasuki ujian yang anda inginkan</p>
+                </div>
             </div>
-            
-            <div style="margin-top: 30px;">
-                <button onclick="goBackBasedOnRole()" class="back-button">Kembali</button>
-                <button onclick="window.Auth?.authLogout?.()" class="back-button" style="margin-left: 10px;">Logout</button>
+
+            <div class="token-input-section">
+                <form id="tokenForm">
+                    <div class="token-inputs">
+                        <input type="text" maxlength="1" class="token-input" data-index="1" required>
+                        <input type="text" maxlength="1" class="token-input" data-index="2" required>
+                        <input type="text" maxlength="1" class="token-input" data-index="3" required>
+                        <input type="text" maxlength="1" class="token-input" data-index="4" required>
+                        <input type="text" maxlength="1" class="token-input" data-index="5" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="submit-button">Submit</button>
+                        <button type="button" onclick="goBackBasedOnRole()" class="back-button">Kembali</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="user-info">
+                <p id="userInfo"></p>
             </div>
         </div>
     </div>
-    
+
+    <script src="ujian.js"></script>
     <script>
         function goBackBasedOnRole() {
-            // Gunakan ByteWard untuk redirect berdasarkan role
             if (window.Auth?.userRole === 'admin') {
                 window.location.href = '../admin/index.html';
             } else {
-                // Siswa tetap di halaman ujian (satu-satunya halaman)
                 window.location.reload();
             }
         }
         
-        // Tampilkan info user jika tersedia
         document.addEventListener('DOMContentLoaded', function() {
             const userInfo = document.getElementById('userInfo');
             if (window.Auth?.currentUser) {
