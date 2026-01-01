@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Meta SEO -->
     <title>Login - AlbEdu</title>
     <meta name="description" content="Login ke sistem AlbEdu dengan akun Google Anda">
     <meta name="theme-color" content="#2563eb">
@@ -20,15 +18,14 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
-    
+    <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script> -->
 
     <!-- App Scripts -->
     <script src="assets/js/firebase.config.js"></script>
     <script src="assets/js/notification.js"></script>
-    <script src="assets/js/ui.js"></script>
-    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/auth.js"></script>  <!-- Auth dulu -->
+    <script src="assets/js/ui.js"></script>    <!-- UI setelah auth -->
     <script src="assets/js/byteward.js"></script>
 </head>
 
@@ -93,24 +90,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('googleLoginBtn');
     const errorMessage = document.getElementById('errorMessage');
     const card = document.querySelector('.login-card');
+    const loginBtnText = document.getElementById('loginBtnText');
 
     let loginInProgress = false;
     let systemReady = false;
 
+    // Fungsi untuk check system ready
     function checkSystemReady() {
         const firebaseReady = typeof firebase !== 'undefined' && firebase.auth;
         const authReady = typeof window.Auth !== 'undefined' &&
                           typeof window.Auth.authLogin === 'function';
-        systemReady = firebaseReady && authReady;
+        const uiReady = typeof window.UI !== 'undefined' &&
+                       typeof window.UI.showAuthLoading === 'function';
+        
+        systemReady = firebaseReady && authReady && uiReady;
         return systemReady;
     }
 
+    // Check system readiness
     const readyInterval = setInterval(() => {
         if (checkSystemReady()) {
             clearInterval(readyInterval);
+            console.log('✅ Semua sistem siap');
         }
     }, 400);
 
+    // Login button handler
     loginBtn.addEventListener('click', async () => {
         if (loginInProgress) return;
 
@@ -122,24 +127,43 @@ document.addEventListener('DOMContentLoaded', () => {
             loginInProgress = true;
             errorMessage.style.display = 'none';
 
-            // 🔥 MORPH MODE
+            // 🔥 1. TAMPILKAN LOADING DARI UI MODULE
+            if (window.UI && window.UI.showAuthLoading) {
+                window.UI.showAuthLoading('Membuka Google Login...');
+            }
+
+            // 🔥 2. MORPH MODE + BUTTON STATE
             loginBtn.classList.add('authenticating');
             card.classList.add('processing');
+            loginBtnText.textContent = 'Memproses...';
 
+            // 🔥 3. PROSES LOGIN
             await window.Auth.authLogin();
-            // redirect handled by auth.js
+            
+            // 🔥 4. Auth akan otomatis hide loading dan redirect
+            //     (melalui auth.js -> onAuthStateChanged)
 
         } catch (err) {
+            console.error('❌ Login error:', err);
             loginInProgress = false;
 
+            // 🔥 5. SEMBUNYIKAN LOADING JIKA ERROR
+            if (window.UI && window.UI.hideAuthLoading) {
+                window.UI.hideAuthLoading();
+            }
+
+            // Reset UI
             loginBtn.classList.remove('authenticating');
             card.classList.remove('processing');
+            loginBtnText.textContent = 'Login dengan Google';
 
+            // Show error
             errorMessage.textContent = `Login gagal: ${err.message}`;
             errorMessage.style.display = 'block';
         }
     });
 
+    // Set current year
     document.getElementById('currentYear').textContent =
         new Date().getFullYear();
 });
