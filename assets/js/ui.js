@@ -1,28 +1,149 @@
-// ByteWard UI Module v1.3.0 - Refactored (Notification System Removed) + Logout Feature
-console.log('🎨 Memuat UI Module v1.3.0 (Refactored) - Dependensi notifikasi dihapus, Logout ditambahkan');
+// ByteWard UI Module v2.0 - Production Ready with Advanced Profile System
+console.log('🚀 Memuat UI Module v2.0 - Sistem Profil 3 Mode dengan Animasi Halus');
 
 // =======================
-// Configuration
+// CONFIGURATION
 // =======================
 const UI_CONFIG = {
-    version: '1.3.0',
-    features: { 
+    version: '2.0.0',
+    features: {
         profileSystem: true,
-        notificationSystem: false, 
+        notificationSystem: false,
         loadingSystem: true,
-        errorSystem: true, 
+        errorSystem: true,
         modalSystem: true,
         toastSystem: true,
-        logoutSystem: true
+        logoutSystem: true,
+        advancedAnimations: true,
+        profileModes: ['view', 'edit', 'editAvatar']
     },
     defaults: {
         animationSpeed: 300,
-        theme: 'light'
+        transitionDuration: 250,
+        theme: 'light',
+        avatarCount: 20,
+        maxFileSize: 5 * 1024 * 1024 // 5MB
+    },
+    selectors: {
+        profileButton: '#profileTrigger',
+        profileOverlay: '#profileOverlay',
+        profilePanel: '#profilePanel',
+        logoutModal: '#logoutModal'
     }
 };
 
 // =======================
-// Profile Button System
+// STATE MANAGEMENT (Identik dengan Prototype)
+// =======================
+const UIState = {
+    mode: 'view', // 'view', 'edit', 'editAvatar'
+    tempName: '',
+    selectedAvatar: null,
+    customAvatar: null,
+    customAvatarPreview: null,
+    hasChanges: false,
+    isLoading: false,
+    isTransitioning: false,
+    autoCloseTriggered: false
+};
+
+// =======================
+// AVATAR MANAGEMENT
+// =======================
+const AvatarSystem = {
+    generateAvatars(count = 20) {
+        const avatars = [];
+        const styles = ['adventurer', 'avataaars', 'big-ears', 'big-smile', 'bottts', 'croodles', 
+                       'fun-emoji', 'icons', 'identicon', 'initials', 'micah', 'miniavs', 
+                       'open-peeps', 'personas', 'pixel-art', 'shapes', 'thumbs'];
+        
+        for (let i = 1; i <= count; i++) {
+            const style = styles[(i - 1) % styles.length];
+            avatars.push({
+                id: `avatar${i}`,
+                name: `Avatar ${i}`,
+                url: `https://api.dicebear.com/7.x/${style}/svg?seed=avatar${i}&backgroundColor=6366f1`,
+                style: style
+            });
+        }
+        return avatars;
+    },
+
+    getDefaultAvatar(seed = 'user') {
+        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&backgroundColor=6366f1`;
+    },
+
+    validateUpload(file) {
+        if (!file.type.startsWith('image/')) {
+            return { valid: false, error: 'Hanya file gambar yang diperbolehkan' };
+        }
+        
+        if (file.size > UI_CONFIG.defaults.maxFileSize) {
+            return { valid: false, error: `Ukuran gambar maksimal ${UI_CONFIG.defaults.maxFileSize / 1024 / 1024}MB` };
+        }
+        
+        return { valid: true };
+    }
+};
+
+// =======================
+// TRANSITION SYSTEM (Identik dengan Prototype)
+// =======================
+const TransitionManager = {
+    async transitionTo(newMode, callback) {
+        if (UIState.isTransitioning) return;
+        
+        const panel = document.getElementById('profilePanel');
+        const contentArea = panel?.querySelector('.view-mode, .edit-mode, .edit-avatar-mode');
+        
+        if (!contentArea) {
+            callback();
+            return;
+        }
+        
+        UIState.isTransitioning = true;
+        
+        // Tambah class exit
+        contentArea.classList.add('mode-transition-exit');
+        
+        // Tunggu animasi keluar
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Eksekusi callback (render mode baru)
+        callback();
+        
+        // Tunggu DOM update
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        const newContent = panel?.querySelector('.view-mode, .edit-mode, .edit-avatar-mode');
+        if (newContent) {
+            // Tambah class enter (khusus untuk edit avatar mode)
+            newContent.classList.add('mode-transition-enter');
+            
+            // Hapus class setelah animasi selesai
+            setTimeout(() => {
+                newContent.classList.remove('mode-transition-enter');
+                contentArea.classList.remove('mode-transition-exit');
+                UIState.isTransitioning = false;
+            }, 250);
+        } else {
+            UIState.isTransitioning = false;
+        }
+    },
+
+    animatePanelIn(panel) {
+        panel.style.transform = 'translateY(0) scale(1)';
+        panel.style.opacity = '1';
+    },
+
+    animatePanelOut(panel) {
+        panel.style.transform = 'translateY(20px) scale(0.97)';
+        panel.style.opacity = '0';
+    }
+};
+
+// =======================
+// PROFILE BUTTON SYSTEM
 // =======================
 function createProfileButton() {
     const existing = document.querySelector('.profile-button-container');
@@ -30,68 +151,90 @@ function createProfileButton() {
 
     const container = document.createElement('div');
     container.className = 'profile-button-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 10000;
+    `;
 
     const button = document.createElement('button');
     button.className = 'profile-button';
     button.id = 'profileTrigger';
-    button.setAttribute('aria-label', 'Open profile panel');
-    
-    const avatarUrl = (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || 
-                     ((window.Auth && window.Auth.currentUser) ? 
-                      generateDefaultAvatar(window.Auth.currentUser.email) : 
-                      generateDefaultAvatar('user'));
+    button.setAttribute('aria-label', 'Buka panel profil');
+    button.style.cssText = `
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        border: none;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        cursor: pointer;
+        padding: 4px;
+        position: relative;
+        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: visible;
+    `;
+
+    button.addEventListener('mouseenter', () => {
+        button.style.transform = 'scale(1.1)';
+        button.style.boxShadow = '0 12px 40px rgba(99, 102, 241, 0.6)';
+    });
+
+    button.addEventListener('mouseleave', () => {
+        button.style.transform = 'scale(1)';
+        button.style.boxShadow = '0 8px 32px rgba(99, 102, 241, 0.4)';
+    });
+
+    const avatarUrl = (window.Auth?.userData?.foto_profil) || 
+                     AvatarSystem.getDefaultAvatar(window.Auth?.currentUser?.email || 'user');
     
     const img = document.createElement('img');
     img.src = avatarUrl;
     img.alt = 'Profile';
     img.className = 'profile-image';
+    img.style.cssText = `
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid white;
+        display: block;
+    `;
+    
     img.onerror = function() {
-        this.src = generateDefaultAvatar('user');
+        this.src = AvatarSystem.getDefaultAvatar('user');
     };
     
     button.appendChild(img);
 
-    if (window.Auth && window.Auth.userData && !window.Auth.userData.profilLengkap) {
+    // Profile Indicator (Identik dengan Prototype)
+    if (window.Auth?.userData && !window.Auth.userData.profilLengkap) {
         const indicator = document.createElement('div');
         indicator.className = 'profile-indicator';
+        indicator.setAttribute('aria-hidden', 'true');
         indicator.textContent = '!';
-        indicator.title = 'Profil belum lengkap';
+        indicator.style.cssText = `
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 900;
+            border: 2.5px solid white;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        `;
         button.appendChild(indicator);
     }
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'profile-tooltip';
-    tooltip.style.cssText = `
-        position: absolute; bottom: -45px; left: 50%; transform: translateX(-50%);
-        background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px;
-        font-size: 12px; white-space: nowrap; opacity: 0; visibility: hidden;
-        transition: all 0.2s; pointer-events: none; z-index: 1000;
-    `;
-    
-    button.appendChild(tooltip);
-    
-    function updateTooltip() {
-        if (window.Auth && window.Auth.userData) {
-            const name = window.Auth.userData.nama || 'User';
-            const email = window.Auth.currentUser?.email || '';
-            tooltip.textContent = `${name} • ${email}`;
-        } else {
-            tooltip.textContent = 'Guest User';
-        }
-    }
-    
-    button.addEventListener('mouseenter', () => {
-        updateTooltip();
-        tooltip.style.opacity = '1';
-        tooltip.style.visibility = 'visible';
-        tooltip.style.bottom = '-40px';
-    });
-    
-    button.addEventListener('mouseleave', () => {
-        tooltip.style.opacity = '0';
-        tooltip.style.visibility = 'hidden';
-        tooltip.style.bottom = '-45px';
-    });
 
     button.addEventListener('click', showProfilePanel);
     container.appendChild(button);
@@ -103,683 +246,715 @@ function updateProfileButton() {
     if (!button) return;
 
     const img = button.querySelector('.profile-image');
-    if (img && window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) {
+    if (img && window.Auth?.userData?.foto_profil) {
         const oldSrc = img.src;
         img.src = window.Auth.userData.foto_profil;
         img.onerror = function() {
             if (this.src !== oldSrc) {
-                this.src = generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
+                this.src = AvatarSystem.getDefaultAvatar(window.Auth?.currentUser?.email || 'user');
             }
         };
     }
 
     const indicator = button.querySelector('.profile-indicator');
-    if (window.Auth && window.Auth.userData && window.Auth.userData.profilLengkap) {
+    if (window.Auth?.userData?.profilLengkap) {
         if (indicator) indicator.remove();
-    } else if (!indicator) {
+    } else if (!indicator && button.querySelector('.profile-image')) {
         const newIndicator = document.createElement('div');
         newIndicator.className = 'profile-indicator';
+        newIndicator.setAttribute('aria-hidden', 'true');
         newIndicator.textContent = '!';
-        newIndicator.title = 'Profil belum lengkap';
+        newIndicator.style.cssText = `
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 900;
+            border: 2.5px solid white;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        `;
         button.appendChild(newIndicator);
     }
 }
 
 // =======================
-// Profile Panel System
+// PANEL CREATION & RENDERING
 // =======================
 function createProfilePanel() {
-    const existing = document.getElementById('profilePanel');
-    if (existing) existing.remove();
+    // Remove existing
+    const existingOverlay = document.getElementById('profileOverlay');
+    if (existingOverlay) existingOverlay.remove();
 
+    const existingModal = document.getElementById('logoutModal');
+    if (existingModal) existingModal.remove();
+
+    // Create overlay (Identik dengan Prototype)
     const overlay = document.createElement('div');
     overlay.className = 'profile-overlay';
     overlay.id = 'profileOverlay';
     overlay.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-        display: none; justify-content: center; align-items: center;
-        z-index: 99999; opacity: 0; transition: opacity 0.3s ease;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 20000;
+        padding: 16px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     `;
 
+    // Create panel (Identik dengan Prototype)
     const panel = document.createElement('div');
     panel.className = 'profile-panel';
     panel.id = 'profilePanel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-labelledby', 'profileTitle');
     panel.style.cssText = `
-        background: white; border-radius: 20px; width: 90%; max-width: 500px;
-        max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        transform: translateY(-20px) scale(0.95); opacity: 0;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        display: flex; flex-direction: column;
+        width: 100%;
+        max-width: 500px;
+        background: white;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+        transform: translateY(40px) scale(0.95);
+        opacity: 0;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     `;
-
-    const header = document.createElement('div');
-    header.className = 'profile-header';
-    header.style.cssText = `
-        padding: 24px; border-bottom: 1px solid #e5e7eb;
-        display: flex; justify-content: space-between; align-items: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
-    `;
-    
-    const headerTitle = document.createElement('h2');
-    headerTitle.textContent = (window.Auth && window.Auth.userData && window.Auth.userData.profilLengkap) ? 
-                             'Profil Saya' : 'Lengkapi Profil';
-    headerTitle.style.cssText = `
-        margin: 0; font-size: 24px; font-weight: 700;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-    
-    const closeButton = document.createElement('button');
-    closeButton.className = 'close-profile';
-    closeButton.id = 'closeProfile';
-    closeButton.innerHTML = '&times;';
-    closeButton.style.cssText = `
-        background: rgba(255, 255, 255, 0.2); border: none; width: 36px; height: 36px;
-        border-radius: 50%; color: white; font-size: 20px; cursor: pointer;
-        display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-    `;
-    closeButton.addEventListener('mouseenter', () => {
-        closeButton.style.background = 'rgba(255, 255, 255, 0.3)';
-        closeButton.style.transform = 'rotate(90deg)';
-    });
-    closeButton.addEventListener('mouseleave', () => {
-        closeButton.style.background = 'rgba(255, 255, 255, 0.2)';
-        closeButton.style.transform = 'rotate(0deg)';
-    });
-
-    header.appendChild(headerTitle);
-    header.appendChild(closeButton);
-
-    const content = document.createElement('div');
-    content.className = 'profile-content';
-    content.style.cssText = `padding: 24px; overflow-y: auto; flex: 1;`;
-
-    const currentProfile = document.createElement('div');
-    currentProfile.className = 'current-profile';
-    currentProfile.style.cssText = `
-        display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
-        padding: 20px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;
-    `;
-    
-    const currentAvatar = document.createElement('img');
-    currentAvatar.className = 'current-avatar';
-    currentAvatar.alt = 'Current Avatar';
-    currentAvatar.style.cssText = `
-        width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-        border: 4px solid white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    `;
-    currentAvatar.src = (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || 
-                       generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
-    currentAvatar.onerror = function() {
-        this.src = generateDefaultAvatar(window.Auth.currentUser?.email || 'user');
-    };
-    
-    const profileInfo = document.createElement('div');
-    profileInfo.style.cssText = `flex: 1;`;
-    
-    const currentName = document.createElement('div');
-    currentName.className = 'current-name';
-    currentName.textContent = (window.Auth && window.Auth.userData && window.Auth.userData.nama) || 'Nama belum diisi';
-    currentName.style.cssText = `
-        font-size: 20px; font-weight: 600; color: #1f2937; margin-bottom: 4px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-    
-    const currentEmail = document.createElement('div');
-    currentEmail.className = 'current-email';
-    currentEmail.textContent = (window.Auth && window.Auth.currentUser && window.Auth.currentUser.email) || 'Email tidak tersedia';
-    currentEmail.style.cssText = `
-        font-size: 14px; color: #6b7280;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-    
-    profileInfo.appendChild(currentName);
-    profileInfo.appendChild(currentEmail);
-    
-    currentProfile.appendChild(currentAvatar);
-    currentProfile.appendChild(profileInfo);
-
-    const editSection = document.createElement('div');
-    editSection.className = 'edit-section';
-    editSection.style.cssText = `background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;`;
-
-    const nameInputGroup = document.createElement('div');
-    nameInputGroup.className = 'name-input-group';
-    nameInputGroup.style.cssText = `margin-bottom: 24px;`;
-    
-    const nameLabel = document.createElement('label');
-    nameLabel.htmlFor = 'profileName';
-    nameLabel.textContent = 'Nama Lengkap';
-    nameLabel.style.cssText = `
-        display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-    
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.id = 'profileName';
-    nameInput.className = 'name-input';
-    nameInput.placeholder = 'Masukkan nama lengkap';
-    nameInput.value = (window.Auth && window.Auth.userData && window.Auth.userData.nama) || '';
-    nameInput.style.cssText = `
-        width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px;
-        font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        transition: all 0.2s; box-sizing: border-box;
-    `;
-    nameInput.addEventListener('focus', () => {
-        nameInput.style.borderColor = '#3b82f6';
-        nameInput.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-    });
-    nameInput.addEventListener('blur', () => {
-        nameInput.style.borderColor = '#e5e7eb';
-        nameInput.style.boxShadow = 'none';
-    });
-
-    nameInputGroup.appendChild(nameLabel);
-    nameInputGroup.appendChild(nameInput);
-
-    const avatarOptionsContainer = document.createElement('div');
-    avatarOptionsContainer.className = 'avatar-options';
-    avatarOptionsContainer.style.cssText = `margin-bottom: 24px;`;
-    
-    const optionTitle = document.createElement('div');
-    optionTitle.className = 'option-title';
-    optionTitle.textContent = 'Pilih Avatar';
-    optionTitle.style.cssText = `
-        font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-    
-    const optionGrid = document.createElement('div');
-    optionGrid.className = 'option-grid';
-    optionGrid.id = 'avatarOptions';
-    optionGrid.style.cssText = `display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;`;
-    
-    avatarOptionsContainer.appendChild(optionTitle);
-    avatarOptionsContainer.appendChild(optionGrid);
-
-    const customUpload = document.createElement('div');
-    customUpload.className = 'custom-upload';
-    customUpload.style.cssText = `margin-bottom: 24px;`;
-    
-    const uploadLabel = document.createElement('label');
-    uploadLabel.className = 'upload-label';
-    uploadLabel.style.cssText = `
-        display: flex; align-items: center; justify-content: center; padding: 12px 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
-        border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 14px;
-        font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-    
-    uploadLabel.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        Unggah Foto Sendiri
-    `;
-    
-    const uploadInput = document.createElement('input');
-    uploadInput.type = 'file';
-    uploadInput.id = 'avatarUpload';
-    uploadInput.className = 'upload-input';
-    uploadInput.accept = 'image/*';
-    uploadInput.style.cssText = `display: none;`;
-    
-    uploadLabel.appendChild(uploadInput);
-    
-    const previewContainer = document.createElement('div');
-    previewContainer.className = 'preview-container';
-    previewContainer.id = 'previewContainer';
-    previewContainer.style.cssText = `display: none; margin-top: 16px; text-align: center;`;
-    
-    const previewTitle = document.createElement('div');
-    previewTitle.className = 'preview-title';
-    previewTitle.textContent = 'Pratinjau:';
-    previewTitle.style.cssText = `font-size: 14px; color: #6b7280; margin-bottom: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`;
-    
-    const previewImage = document.createElement('img');
-    previewImage.className = 'preview-image';
-    previewImage.id = 'previewImage';
-    previewImage.style.cssText = `max-width: 100px; max-height: 100px; border-radius: 50%; border: 3px solid #3b82f6; object-fit: cover;`;
-    
-    previewContainer.appendChild(previewTitle);
-    previewContainer.appendChild(previewImage);
-    
-    customUpload.appendChild(uploadLabel);
-    customUpload.appendChild(previewContainer);
-
-    const statusMessage = document.createElement('div');
-    statusMessage.className = 'status-message';
-    statusMessage.id = 'statusMessage';
-    statusMessage.style.cssText = `display: none; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`;
-
-    const profileActions = document.createElement('div');
-    profileActions.className = 'profile-actions';
-    profileActions.style.cssText = `display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px;`;
-    
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'save-btn';
-    saveBtn.id = 'saveProfile';
-    saveBtn.disabled = true;
-    saveBtn.style.cssText = `
-        flex: 2; padding: 14px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
-        cursor: pointer; transition: all 0.2s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        position: relative; overflow: hidden; min-width: 150px;
-    `;
-    
-    const saveText = document.createElement('span');
-    saveText.id = 'saveText';
-    saveText.textContent = 'Simpan Perubahan';
-    saveText.style.cssText = `position: relative; z-index: 1;`;
-    
-    const saveLoading = document.createElement('span');
-    saveLoading.className = 'save-loading';
-    saveLoading.id = 'saveLoading';
-    saveLoading.style.cssText = `display: none; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; z-index: 2;`;
-    
-    const spinner = document.createElement('span');
-    spinner.className = 'spinner';
-    spinner.style.cssText = `
-        width: 20px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;
-    `;
-    
-    saveLoading.appendChild(spinner);
-    saveLoading.appendChild(document.createTextNode('Menyimpan...'));
-    
-    saveBtn.appendChild(saveText);
-    saveBtn.appendChild(saveLoading);
-    
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'cancel-btn';
-    cancelBtn.id = 'cancelEdit';
-    cancelBtn.textContent = 'Batal';
-    cancelBtn.style.cssText = `
-        padding: 14px 24px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db;
-        border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        min-width: 100px; flex: 1;
-    `;
-    
-    // TOMBOL LOGOUT
-    const logoutBtn = document.createElement('button');
-    logoutBtn.className = 'logout-btn';
-    logoutBtn.id = 'logoutBtn';
-    logoutBtn.textContent = 'Log Out';
-    logoutBtn.style.cssText = `
-        padding: 14px 24px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
-        cursor: pointer; transition: all 0.2s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        min-width: 100px; flex: 1;
-    `;
-    
-    logoutBtn.addEventListener('mouseenter', () => {
-        logoutBtn.style.transform = 'translateY(-2px)';
-        logoutBtn.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.4)';
-    });
-    
-    logoutBtn.addEventListener('mouseleave', () => {
-        logoutBtn.style.transform = 'translateY(0)';
-        logoutBtn.style.boxShadow = 'none';
-    });
-    
-    saveBtn.addEventListener('mouseenter', () => {
-        if (!saveBtn.disabled) {
-            saveBtn.style.transform = 'translateY(-2px)';
-            saveBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
-        }
-    });
-    
-    saveBtn.addEventListener('mouseleave', () => {
-        saveBtn.style.transform = 'translateY(0)';
-        saveBtn.style.boxShadow = 'none';
-    });
-    
-    profileActions.appendChild(saveBtn);
-    profileActions.appendChild(cancelBtn);
-    profileActions.appendChild(logoutBtn);
-
-    editSection.appendChild(nameInputGroup);
-    editSection.appendChild(avatarOptionsContainer);
-    editSection.appendChild(customUpload);
-    editSection.appendChild(statusMessage);
-    editSection.appendChild(profileActions);
-
-    content.appendChild(currentProfile);
-    content.appendChild(editSection);
-
-    panel.appendChild(header);
-    panel.appendChild(content);
 
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
-    
-    initializeProfilePanel();
+
+    // Create logout modal (Identik dengan Prototype)
+    createLogoutModal();
 }
 
-function initializeProfilePanel() {
-    populateAvatarOptions();
+function createLogoutModal() {
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+    modalOverlay.id = 'logoutModal';
+    modalOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 30000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        padding: 16px;
+    `;
 
-    document.getElementById('closeProfile').addEventListener('click', hideProfilePanel);
-    document.getElementById('cancelEdit').addEventListener('click', hideProfilePanel);
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+        background: white;
+        border-radius: 28px;
+        padding: 32px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+        transform: translateY(40px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+
+    modal.innerHTML = `
+        <h3>Konfirmasi Logout</h3>
+        <p>Apakah Anda yakin ingin keluar dari akun Anda?</p>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" id="cancelLogout">
+                Batal
+            </button>
+            <button class="modal-btn modal-btn-confirm" id="confirmLogout">
+                Ya, Logout
+            </button>
+        </div>
+    `;
+
+    modalOverlay.appendChild(modal);
+    document.body.appendChild(modalOverlay);
+
+    // Style modal elements
+    const style = document.createElement('style');
+    style.textContent = `
+        .modal h3 {
+            font-size: clamp(18px, 2vw, 22px);
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1f2937;
+            line-height: 1.3;
+        }
+        
+        .modal p {
+            color: #6b7280;
+            margin-bottom: 32px;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+        }
+        
+        .modal-btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .modal-btn-cancel:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+        
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .modal-btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        @media (max-width: 480px) {
+            .modal-actions {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// =======================
+// RENDER FUNCTIONS (Identik dengan Prototype)
+// =======================
+function renderProfilePanel() {
+    const panel = document.getElementById('profilePanel');
+    if (!panel) return;
+
+    let content = '';
     
-    // EVENT LISTENER UNTUK LOGOUT
-    document.getElementById('logoutBtn').addEventListener('click', confirmAndLogout);
+    // Jika sedang loading, tampilkan skeleton (Identik dengan Prototype)
+    if (UIState.isLoading && UIState.mode === 'view') {
+        content = renderSkeleton();
+    } else {
+        switch (UIState.mode) {
+            case 'view':
+                content = renderViewMode();
+                break;
+            case 'edit':
+                content = renderEditMode();
+                break;
+            case 'editAvatar':
+                content = renderEditAvatarMode();
+                break;
+        }
+    }
+
+    const title = getPanelTitle();
+    panel.innerHTML = `
+        <div class="profile-header">
+            <h2 id="profileTitle">${title}</h2>
+            <button class="close-profile" id="closeProfile" aria-label="Tutup panel">&times;</button>
+        </div>
+        ${content}
+    `;
+
+    bindPanelEvents();
+}
+
+function getPanelTitle() {
+    const titles = {
+        'view': 'Profil Saya',
+        'edit': 'Edit Profil',
+        'editAvatar': 'Pilih Avatar'
+    };
+    return titles[UIState.mode] || 'Profil';
+}
+
+function renderSkeleton() {
+    return `
+        <div class="view-mode" style="padding: 24px; opacity: 0.8;">
+            <div class="avatar-section" style="text-align: center; margin-bottom: 28px;">
+                <div class="skeleton skeleton-circle" style="width: 140px; height: 140px; margin: 0 auto 20px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 50%;"></div>
+            </div>
+            
+            <div class="user-info" style="text-align: center; margin-bottom: 32px;">
+                <div class="skeleton skeleton-text" style="width: 60%; height: 32px; margin: 0 auto 16px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 16px;"></div>
+                <div class="skeleton skeleton-text short" style="width: 40%; height: 20px; margin: 0 auto 24px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 10px;"></div>
+                
+                <div style="background: #f8fafc; border-radius: 20px; padding: 20px; display: inline-block; min-width: 180px; border: 1px solid #e5e7eb;">
+                    <div class="skeleton skeleton-text" style="height: 42px; margin-bottom: 8px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 10px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 70%; height: 14px; margin: 0 auto; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 7px;"></div>
+                </div>
+            </div>
+            
+            <div class="view-actions" style="max-width: 320px; margin: 0 auto;">
+                <div class="skeleton skeleton-text" style="height: 56px; margin-bottom: 16px; border-radius: 20px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite;"></div>
+                <div class="skeleton skeleton-text" style="height: 56px; border-radius: 20px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite;"></div>
+            </div>
+        </div>
+    `;
+}
+
+function renderViewMode() {
+    const user = window.Auth?.userData || {};
+    const avatarUrl = user.foto_profil || AvatarSystem.getDefaultAvatar(user.email || 'user');
     
-    document.getElementById('profileOverlay').addEventListener('click', function(e) {
-        if (e.target.id === 'profileOverlay') hideProfilePanel();
+    return `
+        <div class="view-mode">
+            <div class="avatar-section">
+                <img src="${avatarUrl}" 
+                     alt="Avatar ${user.nama}" 
+                     class="view-avatar"
+                     onerror="this.src='${AvatarSystem.getDefaultAvatar('user')}'">
+                ${!user.profilLengkap ? '<div class="incomplete-badge" aria-label="Profil belum lengkap">!</div>' : ''}
+            </div>
+            
+            <div class="user-info">
+                <h3 class="user-name">${user.nama || 'Nama belum diisi'}</h3>
+                <p class="user-email">${user.email || 'Email tidak tersedia'}</p>
+                <div class="user-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">${user.totalUjian || 0}</span>
+                        <span class="stat-label">Ujian Diselesaikan</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="view-actions">
+                <button class="btn btn-edit" id="editProfileBtn">
+                    <span>Edit Profil</span>
+                </button>
+                <button class="btn btn-logout" id="logoutBtn">
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function renderEditMode() {
+    const user = window.Auth?.userData || {};
+    const avatarUrl = user.foto_profil || AvatarSystem.getDefaultAvatar(user.email || 'user');
+    const hasChanges = UIState.hasChanges;
+    
+    return `
+        <div class="edit-mode">
+            <div class="edit-avatar-section">
+                <img src="${avatarUrl}" 
+                     alt="Avatar ${user.nama}" 
+                     class="edit-avatar"
+                     id="editAvatarImage"
+                     onerror="this.src='${AvatarSystem.getDefaultAvatar('user')}'">
+                <button class="avatar-edit-btn" id="editAvatarBtn">
+                    <span>Ubah Avatar</span>
+                </button>
+            </div>
+            
+            <div class="edit-form">
+                <div class="form-group">
+                    <label for="editName">Nama Lengkap</label>
+                    <input type="text" 
+                           id="editName" 
+                           value="${user.nama || ''}" 
+                           placeholder="Masukkan nama lengkap"
+                           aria-label="Nama lengkap">
+                </div>
+            </div>
+            
+            <div class="status-message" id="statusMessage" role="alert"></div>
+            
+            <div class="edit-actions">
+                <button class="btn btn-primary" id="saveProfileBtn" ${hasChanges ? '' : 'disabled'} aria-label="Simpan perubahan">
+                    ${UIState.isLoading ? 
+                        '<div class="loading-container"><span class="loading-spinner"></span><span>Menyimpan...</span></div>' : 
+                        '<span>Simpan</span>'}
+                </button>
+                <button class="btn btn-secondary" id="cancelEditBtn">
+                    <span>Batal</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function renderEditAvatarMode() {
+    const avatars = AvatarSystem.generateAvatars(20);
+    
+    return `
+        <div class="edit-avatar-mode">
+            <h3>Pilih Avatar</h3>
+            
+            ${UIState.customAvatarPreview ? `
+            <div class="custom-avatar-preview active" id="customAvatarPreviewContainer">
+                <div class="preview-container">
+                    <div class="preview-title">Preview Avatar Custom</div>
+                    <img src="${UIState.customAvatarPreview}" 
+                         alt="Preview avatar custom" 
+                         class="preview-image">
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="avatar-grid" id="avatarGrid" role="listbox" aria-label="Pilihan avatar">
+                ${avatars.map(avatar => `
+                    <div class="avatar-item ${UIState.selectedAvatar === avatar.id ? 'selected' : ''}" 
+                         data-id="${avatar.id}"
+                         role="option"
+                         aria-label="${avatar.name}"
+                         aria-selected="${UIState.selectedAvatar === avatar.id}">
+                        <img src="${avatar.url}" 
+                             alt="${avatar.name}"
+                             onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${avatar.id}&backgroundColor=6366f1'">
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="upload-avatar">
+                <label for="avatarUpload" class="btn-upload">
+                    <span>Unggah Avatar Custom</span>
+                </label>
+                <input type="file" 
+                       id="avatarUpload" 
+                       accept="image/*" 
+                       style="display: none;"
+                       aria-label="Unggah gambar avatar">
+            </div>
+            
+            <div class="edit-avatar-actions">
+                <button class="btn-back" id="backToEditBtn">
+                    <span>Kembali ke Edit Mode</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// =======================
+// EVENT BINDING
+// =======================
+function bindPanelEvents() {
+    // Close button
+    const closeBtn = document.getElementById('closeProfile');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => hideProfilePanel());
+    }
+
+    // Overlay click
+    const overlay = document.getElementById('profileOverlay');
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            hideProfilePanel();
+        }
     });
 
-    const nameInput = document.getElementById('profileName');
-    nameInput.addEventListener('input', function() {
-        if (window.Auth && window.Auth.profileState) {
-            window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
-                tempName: nameInput.value.trim()
+    // Mode-specific events
+    switch (UIState.mode) {
+        case 'view':
+            bindViewModeEvents();
+            break;
+        case 'edit':
+            bindEditModeEvents();
+            break;
+        case 'editAvatar':
+            bindEditAvatarModeEvents();
+            break;
+    }
+}
+
+function bindViewModeEvents() {
+    // Edit Profile button
+    const editBtn = document.getElementById('editProfileBtn');
+    if (editBtn) {
+        editBtn.addEventListener('click', async () => {
+            await TransitionManager.transitionTo('edit', () => {
+                UIState.mode = 'edit';
+                UIState.tempName = window.Auth?.userData?.nama || '';
+                renderProfilePanel();
+            });
+        });
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => showLogoutModal());
+    }
+}
+
+function bindEditModeEvents() {
+    // Name input
+    const nameInput = document.getElementById('editName');
+    if (nameInput) {
+        nameInput.value = window.Auth?.userData?.nama || '';
+        
+        nameInput.addEventListener('input', (e) => {
+            UIState.tempName = e.target.value;
+            UIState.hasChanges = 
+                UIState.tempName !== (window.Auth?.userData?.nama || '') ||
+                UIState.selectedAvatar !== null ||
+                UIState.customAvatar !== null;
+            updateSaveButton();
+        });
+        
+        // Auto-focus input nama (Identik dengan Prototype)
+        setTimeout(() => nameInput.focus(), 50);
+    }
+
+    // Edit Avatar button
+    const editAvatarBtn = document.getElementById('editAvatarBtn');
+    if (editAvatarBtn) {
+        editAvatarBtn.addEventListener('click', async () => {
+            await TransitionManager.transitionTo('editAvatar', () => {
+                UIState.mode = 'editAvatar';
+                renderProfilePanel();
+            });
+        });
+    }
+
+    // Save button
+    const saveBtn = document.getElementById('saveProfileBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => saveProfile());
+    }
+
+    // Cancel button
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', async () => {
+            await TransitionManager.transitionTo('view', () => {
+                UIState.mode = 'view';
+                UIState.hasChanges = false;
+                UIState.selectedAvatar = null;
+                UIState.customAvatar = null;
+                UIState.customAvatarPreview = null;
+                renderProfilePanel();
+            });
+        });
+    }
+}
+
+function bindEditAvatarModeEvents() {
+    // Avatar selection dengan micro-interaction (Identik dengan Prototype)
+    const avatarItems = document.querySelectorAll('.avatar-item');
+    avatarItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Remove selected class from all
+            avatarItems.forEach(i => {
+                i.classList.remove('selected');
+                i.setAttribute('aria-selected', 'false');
+            });
+            
+            // Add to clicked dengan feedback visual
+            item.classList.add('selected');
+            item.setAttribute('aria-selected', 'true');
+            
+            // Store selection
+            const avatarId = item.dataset.id;
+            UIState.selectedAvatar = avatarId;
+            UIState.customAvatar = null;
+            UIState.customAvatarPreview = null;
+            UIState.hasChanges = true;
+            
+            // Hide custom preview
+            const previewContainer = document.getElementById('customAvatarPreviewContainer');
+            if (previewContainer) {
+                previewContainer.classList.remove('active');
+                setTimeout(() => {
+                    previewContainer.style.display = 'none';
+                }, 300);
+            }
+        });
+    });
+
+    // Custom upload
+    const uploadInput = document.getElementById('avatarUpload');
+    if (uploadInput) {
+        uploadInput.addEventListener('change', (e) => handleAvatarUpload(e));
+        
+        // Link button ke input file
+        const uploadBtn = document.querySelector('.btn-upload');
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => {
+                uploadInput.click();
             });
         }
-        checkForChanges();
-    });
-
-    const uploadInput = document.getElementById('avatarUpload');
-    uploadInput.addEventListener('change', handleAvatarUpload);
-
-    document.getElementById('saveProfile').addEventListener('click', saveProfile);
-
-    if (window.Auth && window.Auth.profileState) {
-        window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
-            tempName: (window.Auth && window.Auth.userData && window.Auth.userData.nama) || ''
-        });
-    }
-    checkForChanges();
-}
-
-function populateAvatarOptions() {
-    const container = document.getElementById('avatarOptions');
-    if (!container) return;
-
-    container.innerHTML = '';
-    const avatars = (window.Auth && window.Auth.PROFILE_AVATARS) || [];
-
-    avatars.forEach(function(avatar) {
-        const option = document.createElement('div');
-        option.className = 'avatar-option';
-        option.dataset.id = avatar.id;
-        option.style.cssText = `
-            width: 60px; height: 60px; border-radius: 50%; overflow: hidden; cursor: pointer;
-            border: 3px solid transparent; transition: all 0.2s; position: relative;
-        `;
-
-        const img = document.createElement('img');
-        img.src = avatar.url;
-        img.alt = avatar.name;
-        img.style.cssText = `width: 100%; height: 100%; object-fit: cover;`;
-        
-        img.onerror = function() {
-            const label = document.createElement('div');
-            label.className = 'option-label';
-            label.textContent = avatar.name.charAt(0).toUpperCase();
-            label.style.cssText = `
-                width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-                background: ${avatar.color || '#3b82f6'}; color: white; font-weight: bold; font-size: 18px;
-            `;
-            option.innerHTML = '';
-            option.appendChild(label);
-        };
-
-        option.appendChild(img);
-
-        if (window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) {
-            const currentUrl = window.Auth.userData.foto_profil;
-            if (currentUrl === avatar.url) {
-                option.style.borderColor = avatar.color || '#3b82f6';
-                option.style.boxShadow = `0 0 0 3px ${avatar.color || '#3b82f6'}40`;
-                if (window.Auth && window.Auth.profileState) {
-                    window.Auth.profileState.selectedAvatar = avatar.id;
-                }
-            }
-        }
-
-        option.addEventListener('mouseenter', function() {
-            if (!this.classList.contains('selected')) {
-                this.style.transform = 'scale(1.1)';
-                this.style.borderColor = avatar.color || '#3b82f6';
-            }
-        });
-
-        option.addEventListener('mouseleave', function() {
-            if (!this.classList.contains('selected')) {
-                this.style.transform = 'scale(1)';
-                this.style.borderColor = 'transparent';
-            }
-        });
-
-        option.addEventListener('click', function() {
-            selectAvatar(avatar.id);
-        });
-        
-        container.appendChild(option);
-    });
-}
-
-function selectAvatar(avatarId) {
-    if (window.Auth && window.Auth.profileState) {
-        window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
-            selectedAvatar: avatarId,
-            customAvatar: null
-        });
     }
 
-    document.querySelectorAll('.avatar-option').forEach(function(opt) {
-        opt.classList.remove('selected');
-        opt.style.borderColor = 'transparent';
-        opt.style.boxShadow = 'none';
-        opt.style.transform = 'scale(1)';
-        
-        if (opt.dataset.id === avatarId) {
-            opt.classList.add('selected');
-            const avatar = (window.Auth.PROFILE_AVATARS || []).find(a => a.id === avatarId);
-            opt.style.borderColor = avatar?.color || '#3b82f6';
-            opt.style.boxShadow = `0 0 0 3px ${avatar?.color || '#3b82f6'}40`;
+    // Back button dengan transisi (Identik dengan Prototype)
+    const backBtn = document.getElementById('backToEditBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', async () => {
+            await TransitionManager.transitionTo('edit', () => {
+                UIState.mode = 'edit';
+                renderProfilePanel();
+                updateAvatarPreview();
+            });
+        });
+    }
+}
+
+// =======================
+// AVATAR HANDLING
+// =======================
+function updateAvatarPreview() {
+    const avatarImg = document.getElementById('editAvatarImage');
+    if (!avatarImg) return;
+
+    if (UIState.customAvatar) {
+        avatarImg.src = UIState.customAvatar;
+    } else if (UIState.selectedAvatar) {
+        const avatars = AvatarSystem.generateAvatars();
+        const selected = avatars.find(a => a.id === UIState.selectedAvatar);
+        if (selected) {
+            avatarImg.src = selected.url;
         }
-    });
-
-    const previewContainer = document.getElementById('previewContainer');
-    const previewImage = document.getElementById('previewImage');
-    previewContainer.style.display = 'none';
-    previewImage.src = '';
-
-    checkForChanges();
+    }
 }
 
 function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-        showStatus('Hanya file gambar yang diperbolehkan', 'error');
+    const validation = AvatarSystem.validateUpload(file);
+    if (!validation.valid) {
+        showStatus(validation.error, 'error');
         return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-        showStatus('Ukuran gambar maksimal 2MB', 'error');
-        return;
-    }
-
-    try {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            if (window.Auth && window.Auth.profileState) {
-                window.Auth.profileState = Object.assign({}, window.Auth.profileState, {
-                    customAvatar: e.target.result,
-                    selectedAvatar: 'custom'
-                });
-            }
-
-            document.querySelectorAll('.avatar-option').forEach(function(opt) {
-                opt.classList.remove('selected');
-                opt.style.borderColor = 'transparent';
-                opt.style.boxShadow = 'none';
-            });
-
-            const previewImage = document.getElementById('previewImage');
-            const previewContainer = document.getElementById('previewContainer');
-            previewImage.src = e.target.result;
-            previewContainer.style.display = 'block';
-            
-            checkForChanges();
-        };
-        reader.readAsDataURL(file);
-    } catch (error) {
-        showStatus('Gagal membaca file', 'error');
-        console.error('Upload error:', error);
-    }
-}
-
-function checkForChanges() {
-    const nameChanged = (window.Auth && window.Auth.profileState && window.Auth.profileState.tempName) !== 
-                     ((window.Auth && window.Auth.userData && window.Auth.userData.nama) || '');
-    let avatarChanged = false;
-
-    if (window.Auth && window.Auth.profileState) {
-        const state = window.Auth.profileState;
-        if (state.selectedAvatar === 'custom' && state.customAvatar) {
-            avatarChanged = state.customAvatar !== ((window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || '');
-        } else if (state.selectedAvatar) {
-            const avatars = (window.Auth && window.Auth.PROFILE_AVATARS) || [];
-            const selected = avatars.find(function(a) { return a.id === state.selectedAvatar; });
-            avatarChanged = (selected && selected.url) !== ((window.Auth && window.Auth.userData && window.Auth.userData.foto_profil) || '');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        UIState.customAvatar = e.target.result;
+        UIState.customAvatarPreview = e.target.result;
+        UIState.selectedAvatar = null;
+        UIState.hasChanges = true;
+        
+        // Update selected visual
+        const avatarItems = document.querySelectorAll('.avatar-item');
+        avatarItems.forEach(item => {
+            item.classList.remove('selected');
+            item.setAttribute('aria-selected', 'false');
+        });
+        
+        // Show preview
+        showStatus('Avatar custom berhasil diunggah!', 'success');
+        
+        // Render preview immediately (Identik dengan Prototype)
+        const previewContainer = document.createElement('div');
+        previewContainer.id = 'customAvatarPreviewContainer';
+        previewContainer.className = 'custom-avatar-preview active';
+        previewContainer.innerHTML = `
+            <div class="preview-container">
+                <div class="preview-title">Preview Avatar Custom</div>
+                <img src="${e.target.result}" 
+                     alt="Preview avatar custom" 
+                     class="preview-image">
+            </div>
+        `;
+        
+        const existingPreview = document.getElementById('customAvatarPreviewContainer');
+        const avatarGrid = document.getElementById('avatarGrid');
+        if (existingPreview && avatarGrid && avatarGrid.parentNode) {
+            existingPreview.replaceWith(previewContainer);
+        } else if (avatarGrid && avatarGrid.parentNode) {
+            avatarGrid.parentNode.insertBefore(previewContainer, avatarGrid);
         }
-
-        window.Auth.profileState = Object.assign({}, state, { hasChanges: nameChanged || avatarChanged });
-    }
-
-    const saveBtn = document.getElementById('saveProfile');
-    if (saveBtn) {
-        const isLoading = (window.Auth && window.Auth.profileState && window.Auth.profileState.isLoading) || false;
-        const hasChanges = (window.Auth && window.Auth.profileState && window.Auth.profileState.hasChanges) || false;
         
-        saveBtn.disabled = !hasChanges || isLoading;
-        
-        if (hasChanges && !isLoading) {
-            saveBtn.style.opacity = '1';
-            saveBtn.style.cursor = 'pointer';
-        } else {
-            saveBtn.style.opacity = '0.6';
-            saveBtn.style.cursor = 'not-allowed';
-    }
-    }
+        // Reset file input
+        event.target.value = '';
+    };
+    reader.readAsDataURL(file);
 }
 
-function showProfilePanel() {
-    const overlay = document.getElementById('profileOverlay');
-    const panel = document.getElementById('profilePanel');
+// =======================
+// SAVE PROFILE (PRODUCTION READY)
+// =======================
+function updateSaveButton() {
+    const saveBtn = document.getElementById('saveProfileBtn');
+    if (!saveBtn) return;
 
-    if (!overlay || !panel) {
-        createProfilePanel();
-        setTimeout(function() {
-            const o = document.getElementById('profileOverlay');
-            const p = document.getElementById('profilePanel');
-            o.style.display = 'flex';
-            setTimeout(() => {
-                o.style.opacity = '1';
-                p.style.opacity = '1';
-                p.style.transform = 'translateY(0) scale(1)';
-            }, 10);
-        }, 10);
+    saveBtn.disabled = !UIState.hasChanges || UIState.isLoading;
+    
+    if (UIState.hasChanges && !UIState.isLoading) {
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
     } else {
-        overlay.style.display = 'flex';
-        setTimeout(() => {
-            overlay.style.opacity = '1';
-            panel.style.opacity = '1';
-            panel.style.transform = 'translateY(0) scale(1)';
-        }, 10);
-    }
-
-    const nameInput = document.getElementById('profileName');
-    if (nameInput && window.Auth && window.Auth.userData) {
-        nameInput.value = window.Auth.userData.nama || '';
-        if (window.Auth && window.Auth.profileState) {
-            window.Auth.profileState.tempName = window.Auth.userData.nama || '';
-        }
-    }
-
-    const statusEl = document.getElementById('statusMessage');
-    if (statusEl) {
-        statusEl.style.display = 'none';
-        statusEl.textContent = '';
-    }
-
-    checkForChanges();
-}
-
-function hideProfilePanel() {
-    const overlay = document.getElementById('profileOverlay');
-    const panel = document.getElementById('profilePanel');
-
-    if (panel) {
-        panel.style.opacity = '0';
-        panel.style.transform = 'translateY(-20px) scale(0.95)';
-    }
-    
-    if (overlay) {
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            const uploadInput = document.getElementById('avatarUpload');
-            if (uploadInput) uploadInput.value = '';
-        }, 300);
+        saveBtn.style.opacity = '0.6';
+        saveBtn.style.cursor = 'not-allowed';
     }
 }
 
-function showStatus(message, type) {
-    const statusEl = document.getElementById('statusMessage');
-    if (!statusEl) return;
-    
-    statusEl.textContent = message;
-    statusEl.className = 'status-message';
-    statusEl.style.display = 'block';
-    
-    if (type === 'success') {
-        statusEl.style.cssText += `background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;`;
-    } else if (type === 'error') {
-        statusEl.style.cssText += `background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;`;
-    } else if (type === 'info') {
-        statusEl.style.cssText += `background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;`;
-    }
-    
-    if (type === 'success') {
-        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-    }
-}
-
-// =======================
-// CORE PRODUCTION LOGIC: saveProfile
-// =======================
 async function saveProfile() {
-    if (!window.Auth || !window.Auth.profileState || !window.Auth.userData || !window.Auth.currentUser) {
+    if (!UIState.hasChanges || UIState.isLoading) return;
+
+    // Validate required data
+    if (!window.Auth || !window.Auth.currentUser || !window.Auth.userData) {
         showStatus('Sistem auth tidak tersedia', 'error');
         return;
     }
 
+    // Check online status
     if (!navigator.onLine) {
         showStatus('Anda sedang offline. Periksa koneksi internet.', 'error');
         return;
     }
 
-    const state = window.Auth.profileState;
-    if (state.isLoading || !state.hasChanges) return;
-
     try {
-        window.Auth.profileState = Object.assign({}, state, { isLoading: true });
-        updateSaveButtonState();
+        // Start loading - tampilkan skeleton di view mode
+        UIState.isLoading = true;
+        UIState.mode = 'view';
+        renderProfilePanel();
 
         const updates = {};
         
-        if (state.tempName !== undefined && state.tempName !== window.Auth.userData.nama) {
-            const cleanName = state.tempName.trim();
+        // Update name if changed
+        if (UIState.tempName !== undefined && UIState.tempName !== window.Auth.userData.nama) {
+            const cleanName = UIState.tempName.trim();
             if (cleanName.length > 0) {
                 updates.nama = cleanName;
             } else {
@@ -787,18 +962,20 @@ async function saveProfile() {
             }
         }
 
+        // Update avatar
         let newAvatarUrl = window.Auth.userData.foto_profil;
-        if (state.selectedAvatar === 'custom' && state.customAvatar) {
-            newAvatarUrl = state.customAvatar;
-        } else if (state.selectedAvatar) {
-            const selected = (window.Auth.PROFILE_AVATARS || []).find(a => a.id === state.selectedAvatar);
-            newAvatarUrl = (selected && selected.url) || '';
+        if (UIState.customAvatar) {
+            newAvatarUrl = UIState.customAvatar;
+        } else if (UIState.selectedAvatar) {
+            const selected = AvatarSystem.generateAvatars().find(a => a.id === UIState.selectedAvatar);
+            newAvatarUrl = selected?.url || '';
         }
 
         if (newAvatarUrl && newAvatarUrl !== window.Auth.userData.foto_profil) {
             updates.foto_profil = newAvatarUrl;
         }
 
+        // Determine if profile is complete
         const finalName = updates.nama || window.Auth.userData.nama || '';
         const finalAvatar = updates.foto_profil || window.Auth.userData.foto_profil || '';
         
@@ -808,38 +985,40 @@ async function saveProfile() {
         updates.profilLengkap = isNameValid && isAvatarValid;
         updates.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
+        // Remove fields that shouldn't be updated
         delete updates.email;
         delete updates.peran;
         delete updates.id;
         delete updates.createdAt;
 
-        await firebaseDb.collection('users').doc(window.Auth.currentUser.uid).update(updates);
+        // Update Firestore
+        await firebase.firestore().collection('users').doc(window.Auth.currentUser.uid).update(updates);
 
-        window.Auth.userData = Object.assign({}, window.Auth.userData, updates);
-        window.Auth.profileState = Object.assign({}, state, {
-            isProfileComplete: updates.profilLengkap,
-            hasChanges: false,
-            isLoading: false
-        });
+        // Update local Auth state
+        window.Auth.userData = { ...window.Auth.userData, ...updates };
+        
+        // Update UI state
+        UIState.hasChanges = false;
+        UIState.selectedAvatar = null;
+        UIState.customAvatar = null;
+        UIState.customAvatarPreview = null;
+        UIState.isLoading = false;
 
+        // Update UI components
         updateProfileButton();
         
-        const currentAvatar = document.querySelector('.current-avatar');
-        const currentName = document.querySelector('.current-name');
-        if (currentAvatar && updates.foto_profil) {
-            currentAvatar.src = updates.foto_profil;
-        }
-        if (currentName && updates.nama) {
-            currentName.textContent = updates.nama;
-        }
+        // Render updated view mode
+        renderProfilePanel();
 
+        // Tampilkan success message
         showStatus('Profil berhasil disimpan!', 'success');
         
-        if (updates.profilLengkap && !state.autoCloseTriggered) {
-            window.Auth.profileState = Object.assign({}, window.Auth.profileState, { autoCloseTriggered: true });
+        // Auto close jika profil lengkap (Identik dengan Prototype)
+        if (updates.profilLengkap && !UIState.autoCloseTriggered) {
+            UIState.autoCloseTriggered = true;
             setTimeout(() => {
                 hideProfilePanel();
-                window.Auth.profileState = Object.assign({}, window.Auth.profileState, { autoCloseTriggered: false });
+                UIState.autoCloseTriggered = false;
             }, 1500);
         }
 
@@ -855,502 +1034,980 @@ async function saveProfile() {
         
         showStatus(userMessage, 'error');
         
-        if (window.Auth && window.Auth.profileState) {
-            window.Auth.profileState = Object.assign({}, window.Auth.profileState, { isLoading: false });
+        // Reset loading state
+        UIState.isLoading = false;
+        renderProfilePanel();
+    }
+}
+
+// =======================
+// STATUS MESSAGES
+// =======================
+function showStatus(message, type = 'success') {
+    const statusEl = document.getElementById('statusMessage');
+    if (!statusEl) return;
+
+    const icon = type === 'success' ? '✓' : '✗';
+    statusEl.innerHTML = `
+        <span class="status-icon">${icon}</span>
+        <span>${message}</span>
+    `;
+    statusEl.className = `status-message status-${type}`;
+    statusEl.style.cssText = `
+        padding: 16px 20px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        line-height: 1.5;
+        ${type === 'success' ? 
+            'background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;' : 
+            'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;'}
+    `;
+
+    if (type === 'success') {
+        setTimeout(() => {
+            statusEl.className = 'status-message';
+            statusEl.innerHTML = '';
+            statusEl.style.cssText = 'display: none;';
+        }, 3000);
+    }
+}
+
+// =======================
+// LOGOUT SYSTEM (Identik dengan Prototype)
+// =======================
+function showLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    modal.classList.add('active');
+
+    // Focus trap untuk modal
+    setTimeout(() => {
+        document.getElementById('cancelLogout').focus();
+    }, 100);
+
+    // Bind modal events
+    document.getElementById('cancelLogout').addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+
+    document.getElementById('confirmLogout').addEventListener('click', () => {
+        performLogout();
+    });
+
+    // Escape key untuk close modal
+    const handleEscKey = (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            modal.classList.remove('active');
+            document.removeEventListener('keydown', handleEscKey);
         }
-    } finally {
-        updateSaveButtonState();
-    }
+    };
+    document.addEventListener('keydown', handleEscKey);
 }
 
-function updateSaveButtonState() {
-    const saveBtn = document.getElementById('saveProfile');
-    const saveText = document.getElementById('saveText');
-    const saveLoading = document.getElementById('saveLoading');
-
-    if (!saveBtn || !saveText || !saveLoading) return;
-
-    const isLoading = (window.Auth && window.Auth.profileState && window.Auth.profileState.isLoading) || false;
-    const hasChanges = (window.Auth && window.Auth.profileState && window.Auth.profileState.hasChanges) || false;
+async function performLogout() {
+    const modal = document.getElementById('logoutModal');
+    modal.classList.remove('active');
     
-    saveBtn.disabled = !hasChanges || isLoading;
-
-    if (isLoading) {
-        saveText.style.display = 'none';
-        saveLoading.style.display = 'flex';
-        saveBtn.style.cursor = 'wait';
-    } else {
-        saveText.style.display = 'inline';
-        saveLoading.style.display = 'none';
-        saveBtn.style.cursor = hasChanges ? 'pointer' : 'not-allowed';
-    }
-}
-
-// =======================
-// Logout System with Confirmation
-// =======================
-async function confirmAndLogout() {
+    // Simulate logout process
+    showStatus('Sedang logout...', 'success');
+    
     try {
-        // Gunakan Modal System untuk konfirmasi
-        const confirmed = await window.UI.Modal.confirm({
-            title: 'Konfirmasi Logout',
-            message: 'Apakah Anda yakin ingin keluar dari akun ini?',
-            confirmText: 'Ya, Keluar',
-            cancelText: 'Batal'
-        });
+        // Tutup panel profil
+        hideProfilePanel();
         
-        if (confirmed) {
-            // Tampilkan loading
-            showAuthLoading('Sedang keluar...');
+        // Panggil fungsi logout dari Auth system
+        if (window.Auth && window.Auth.signOut) {
+            await window.Auth.signOut();
             
-            // Tutup panel profil
-            hideProfilePanel();
-            
-            // Panggil fungsi logout dari Auth system
-            if (window.Auth && window.Auth.signOut) {
-                await window.Auth.signOut();
-                
-                // Tampilkan toast sukses
-                if (window.UI.Toast) {
-                    window.UI.Toast.success('Berhasil logout!');
-                }
-                
-                // Redirect ke halaman login atau refresh
-                setTimeout(() => {
-                    window.location.href = '/login.html';
-                }, 1500);
-                
-            } else if (window.firebaseAuth) {
-                // Fallback ke Firebase auth langsung
-                await window.firebaseAuth.signOut();
-                
-                if (window.UI.Toast) {
-                    window.UI.Toast.success('Berhasil logout!');
-                }
-                
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                throw new Error('Auth system tidak ditemukan');
+            // Tampilkan toast sukses
+            if (window.UI && window.UI.Toast) {
+                window.UI.Toast.success('Berhasil logout!');
             }
+            
+            // Redirect ke halaman login
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 1500);
+            
+        } else if (window.firebaseAuth) {
+            // Fallback ke Firebase auth langsung
+            await window.firebaseAuth.signOut();
+            
+            if (window.UI && window.UI.Toast) {
+                window.UI.Toast.success('Berhasil logout!');
+            }
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            throw new Error('Auth system tidak ditemukan');
         }
     } catch (error) {
         console.error('Logout error:', error);
-        
-        // Tampilkan pesan error
-        if (window.UI.Toast) {
-            window.UI.Toast.error('Gagal logout: ' + (error.message || 'Terjadi kesalahan'));
-        }
-        
-        // Sembunyikan loading
-        hideAuthLoading();
+        showStatus('Gagal logout: ' + (error.message || 'Terjadi kesalahan'), 'error');
     }
 }
 
-// Fungsi logout alternatif jika diperlukan
-function logoutUser() {
-    return confirmAndLogout();
+// =======================
+// PANEL CONTROLS
+// =======================
+function showProfilePanel() {
+    // Reset state setiap kali membuka panel
+    UIState.mode = 'view';
+    UIState.hasChanges = false;
+    UIState.selectedAvatar = null;
+    UIState.customAvatar = null;
+    UIState.customAvatarPreview = null;
+    
+    createProfilePanel();
+    renderProfilePanel();
+    
+    const overlay = document.getElementById('profileOverlay');
+    overlay.classList.add('active');
+    
+    // Animasi masuk (Identik dengan Prototype)
+    setTimeout(() => {
+        const panel = document.getElementById('profilePanel');
+        panel.style.transform = 'translateY(0) scale(1)';
+        panel.style.opacity = '1';
+    }, 10);
+    
+    // Focus trap untuk aksesibilitas
+    setTimeout(() => {
+        const closeBtn = document.getElementById('closeProfile');
+        if (closeBtn) closeBtn.focus();
+    }, 100);
+}
+
+function hideProfilePanel() {
+    const overlay = document.getElementById('profileOverlay');
+    const panel = document.getElementById('profilePanel');
+    
+    if (panel) {
+        panel.style.transform = 'translateY(40px) scale(0.95)';
+        panel.style.opacity = '0';
+    }
+    
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            overlay.style.opacity = '1';
+            
+            // Reset file inputs
+            const uploadInput = document.getElementById('avatarUpload');
+            if (uploadInput) uploadInput.value = '';
+        }, 300);
+    }
+    
+    // Reset state
+    UIState.mode = 'view';
+    UIState.hasChanges = false;
+    UIState.selectedAvatar = null;
+    UIState.customAvatar = null;
+    UIState.customAvatarPreview = null;
+    
+    // Kembalikan fokus ke tombol profil
+    const profileBtn = document.getElementById('profileTrigger');
+    if (profileBtn) profileBtn.focus();
 }
 
 // =======================
-// Modal System
+// KEYBOARD NAVIGATION
 // =======================
-if (!window.ModalSystemClass) {
-    window.ModalSystemClass = class ModalSystem {
-        constructor() { this.modals = new Map(); this.init(); }
-        init() { this.injectModalCSS(); console.log('📦 Modal System Initialized'); }
-        injectModalCSS() {
-            if (document.querySelector('#modal-css')) return;
-            const style = document.createElement('style');
-            style.id = 'modal-css';
-            style.textContent = `
-                .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
-                .modal { background: white; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); transform: translateY(-20px) scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-                .modal.active { transform: translateY(0) scale(1); opacity: 1; }
-                .modal-header { padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f9fafb; }
-                .modal-title { margin: 0; font-size: 20px; font-weight: 600; color: #1f2937; }
-                .modal-close { background: none; border: none; font-size: 24px; color: #6b7280; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-                .modal-close:hover { background: #f3f4f6; color: #374151; }
-                .modal-content { padding: 24px; max-height: 60vh; overflow-y: auto; }
-                .modal-footer { padding: 20px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px; background: #f9fafb; }
-                .modal-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
-                .modal-btn-primary { background: #3b82f6; color: white; }
-                .modal-btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
-                .modal-btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-                .modal-btn-secondary:hover { background: #e5e7eb; }
-            `;
-            document.head.appendChild(style);
-        }
-        show(options) {
-            const { title = 'Modal', content = '', buttons = [], onClose = null, closeOnOverlayClick = true } = options;
-            const id = `modal-${Date.now()}`;
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            overlay.id = `${id}-overlay`;
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.id = id;
-            const header = document.createElement('div');
-            header.className = 'modal-header';
-            const titleEl = document.createElement('h2');
-            titleEl.className = 'modal-title';
-            titleEl.textContent = title;
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'modal-close';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.addEventListener('click', () => this.hide(id));
-            header.appendChild(titleEl);
-            header.appendChild(closeBtn);
-            const contentEl = document.createElement('div');
-            contentEl.className = 'modal-content';
-            if (typeof content === 'string') contentEl.innerHTML = content;
-            else if (content instanceof HTMLElement) contentEl.appendChild(content);
-            else contentEl.textContent = content;
-            const footer = document.createElement('div');
-            footer.className = 'modal-footer';
-            buttons.forEach(btn => {
-                const button = document.createElement('button');
-                button.className = `modal-btn modal-btn-${btn.type || 'secondary'}`;
-                button.textContent = btn.text;
-                if (btn.onClick) {
-                    button.addEventListener('click', () => {
-                        btn.onClick();
-                        if (btn.closeOnClick !== false) this.hide(id);
-                    });
-                } else button.addEventListener('click', () => this.hide(id));
-                footer.appendChild(button);
-            });
-            modal.appendChild(header);
-            modal.appendChild(contentEl);
-            if (buttons.length > 0) modal.appendChild(footer);
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-            this.modals.set(id, { overlay, modal, onClose });
-            setTimeout(() => { overlay.style.opacity = '1'; modal.classList.add('active'); }, 10);
-            if (closeOnOverlayClick) overlay.addEventListener('click', (e) => { if (e.target === overlay) this.hide(id); });
-            const escapeHandler = (e) => { if (e.key === 'Escape') this.hide(id); };
-            document.addEventListener('keydown', escapeHandler);
-            this.modals.get(id).escapeHandler = escapeHandler;
-            return id;
-        }
-        hide(id) {
-            const modalData = this.modals.get(id);
-            if (!modalData) return;
-            const { overlay, modal, onClose, escapeHandler } = modalData;
-            if (escapeHandler) document.removeEventListener('keydown', escapeHandler);
-            modal.classList.remove('active');
-            overlay.style.opacity = '0';
-            setTimeout(() => {
-                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                this.modals.delete(id);
-                if (onClose) onClose();
-            }, 300);
-        }
-        confirm(options) {
-            return new Promise((resolve) => {
-                this.show({
-                    title: options.title || 'Konfirmasi',
-                    content: options.message || 'Apakah anda yakin?',
-                    buttons: [
-                        { text: options.cancelText || 'Batal', type: 'secondary', onClick: () => resolve(false) },
-                        { text: options.confirmText || 'Ya', type: 'primary', onClick: () => resolve(true) }
-                    ]
-                });
-            });
-        }
-        alert(options) {
-            return new Promise((resolve) => {
-                this.show({
-                    title: options.title || 'Informasi',
-                    content: options.message || '',
-                    buttons: [{ text: options.okText || 'OK', type: 'primary', onClick: () => resolve() }]
-                });
-            });
-        }
-    };
-}
-
-// =======================
-// Toast System
-// =======================
-if (!window.ToastSystemClass) {
-    window.ToastSystemClass = class ToastSystem {
-        constructor() { this.container = null; this.toasts = new Map(); this.init(); }
-        init() { this.createContainer(); this.injectToastCSS(); console.log('🍞 Toast System Initialized'); }
-        createContainer() {
-            if (!document.getElementById('toast-container')) {
-                this.container = document.createElement('div');
-                this.container.id = 'toast-container';
-                this.container.className = 'toast-container';
-                document.body.appendChild(this.container);
-            } else this.container = document.getElementById('toast-container');
-        }
-        injectToastCSS() {
-            if (document.querySelector('#toast-css')) return;
-            const style = document.createElement('style');
-            style.id = 'toast-css';
-            style.textContent = `
-                .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; width: 100%; max-width: 400px; }
-                .toast { background: rgba(31, 41, 55, 0.95); color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; backdrop-filter: blur(10px); }
-                .toast.show { transform: translateY(0); opacity: 1; }
-                .toast.hide { transform: translateY(-100px); opacity: 0; }
-                .toast-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-                .toast-message { flex: 1; font-size: 14px; line-height: 1.5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-                .toast-close { background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 20px; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; flex-shrink: 0; padding: 0; line-height: 1; }
-                .toast-close:hover { background: rgba(255, 255, 255, 0.1); color: white; }
-                .toast.success { background: rgba(16, 185, 129, 0.95); }
-                .toast.error { background: rgba(239, 68, 68, 0.95); }
-                .toast.warning { background: rgba(245, 158, 11, 0.95); }
-                .toast.info { background: rgba(59, 130, 246, 0.95); }
-            `;
-            document.head.appendChild(style);
-        }
-        show(message, options = {}) {
-            const { type = 'info', duration = 3000, closeable = true, icon = null } = options;
-            const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const toast = document.createElement('div');
-            toast.id = id;
-            toast.className = `toast ${type}`;
-            const iconContent = icon || this.getIcon(type);
-            toast.innerHTML = `<div class="toast-icon">${iconContent}</div><div class="toast-message">${message}</div>${closeable ? '<button class="toast-close">&times;</button>' : ''}`;
-            if (closeable) toast.querySelector('.toast-close').addEventListener('click', () => this.hide(id));
-            toast.addEventListener('click', (e) => { if (!e.target.closest('.toast-close')) this.hide(id); });
-            this.container.appendChild(toast);
-            this.toasts.set(id, { element: toast, timeout: null });
-            setTimeout(() => toast.classList.add('show'), 10);
-            if (duration > 0) {
-                const timeout = setTimeout(() => this.hide(id), duration);
-                this.toasts.get(id).timeout = timeout;
+function initKeyboardNavigation() {
+    document.addEventListener('keydown', (e) => {
+        // ESC key untuk menutup panel
+        if (e.key === 'Escape') {
+            const overlay = document.getElementById('profileOverlay');
+            const modal = document.getElementById('logoutModal');
+            
+            if (modal && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                e.preventDefault();
+            } else if (overlay && overlay.classList.contains('active')) {
+                hideProfilePanel();
+                e.preventDefault();
             }
-            return id;
         }
-        getIcon(type) { const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' }; return icons[type] || '🔔'; }
-        hide(id) {
-            const toastData = this.toasts.get(id);
-            if (!toastData) return;
-            const { element, timeout } = toastData;
-            if (timeout) clearTimeout(timeout);
-            element.classList.remove('show');
-            element.classList.add('hide');
-            setTimeout(() => {
-                if (element.parentNode) element.parentNode.removeChild(element);
-                this.toasts.delete(id);
-            }, 300);
+        
+        // Tab key untuk focus trap
+        if (e.key === 'Tab' && document.getElementById('profileOverlay')?.classList.contains('active')) {
+            const focusableElements = document.querySelectorAll('#profilePanel button, #profilePanel input, #profilePanel [tabindex]:not([tabindex="-1"])');
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            
+            if (e.shiftKey && document.activeElement === firstElement) {
+                lastElement.focus();
+                e.preventDefault();
+            } else if (!e.shiftKey && document.activeElement === lastElement) {
+                firstElement.focus();
+                e.preventDefault();
+            }
         }
-        clearAll() { this.toasts.forEach((toastData, id) => this.hide(id)); }
-        success(message, duration = 3000) { return this.show(message, { type: 'success', duration }); }
-        error(message, duration = 4000) { return this.show(message, { type: 'error', duration }); }
-        warning(message, duration = 3500) { return this.show(message, { type: 'warning', duration }); }
-        info(message, duration = 2500) { return this.show(message, { type: 'info', duration }); }
-    };
+    });
 }
 
 // =======================
-// Loading System
+// CSS INJECTION (Identik dengan Prototype)
 // =======================
-function showAuthLoading(text) {
-    text = text || 'Memverifikasi sesi login…';
-    let el = document.getElementById('loadingIndicator');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'loadingIndicator';
-        el.className = 'loading-indicator';
-        el.innerHTML = `<div class="block-loader"><div class="block-block" style="--i:0"></div><div class="block-block" style="--i:1"></div><div class="block-block" style="--i:2"></div><div class="block-block" style="--i:3"></div><div class="block-block" style="--i:4"></div></div><div class="loading-text">${text}</div><div class="progress-bar"><div class="progress-fill"></div></div>`;
-        document.body.appendChild(el);
-        injectLoadingCSS();
-    }
-    el.style.display = 'flex';
-    const textEl = el.querySelector('.loading-text');
-    if (textEl) textEl.textContent = text;
-    el.offsetHeight;
-}
-
-function hideAuthLoading() {
-    const el = document.getElementById('loadingIndicator');
-    if (!el) return;
-    el.style.opacity = '0';
-    setTimeout(() => { el.style.display = 'none'; el.style.opacity = '1'; }, 300);
-}
-
-function injectLoadingCSS() {
-    if (document.querySelector('#loading-css')) return;
-    const style = document.createElement('style');
-    style.id = 'loading-css';
-    style.textContent = `
-        .loading-indicator { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: none; justify-content: center; align-items: center; z-index: 10000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; flex-direction: column; backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
-        .block-loader { display: flex; align-items: center; justify-content: center; gap: 8px; height: 60px; }
-        .block-block { width: 12px; height: 40px; background: linear-gradient(to bottom, #3b82f6, #2563eb); border-radius: 4px; animation: block-bounce 1.8s ease-in-out infinite; animation-delay: calc(var(--i) * 0.15s); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
-        .block-block:nth-child(odd) { background: linear-gradient(to bottom, #1d4ed8, #3b82f6); }
-        .block-block:nth-child(3) { width: 14px; height: 45px; }
-        @keyframes block-bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-15px); } }
-        .loading-text { margin-top: 30px; color: #1e293b; font-size: 16px; font-weight: 500; text-align: center; max-width: 300px; line-height: 1.5; }
-        .progress-bar { width: 200px; height: 4px; background: #e2e8f0; border-radius: 2px; margin-top: 20px; overflow: hidden; }
-        .progress-fill { width: 40%; height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: 2px; animation: progress-shift 2s ease-in-out infinite; }
-        @keyframes progress-shift { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(200%); } }
-    `;
-    document.head.appendChild(style);
-}
-
-function showError(message, options = {}) {
-    console.error('ByteWard Error:', message);
-}
-
-function generateDefaultAvatar(seed) {
-    const defaultSeed = seed || 'user' + Date.now();
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(defaultSeed)}&backgroundColor=6b7280`;
-}
-
 function injectProfileCSS() {
-    if (document.querySelector('link[href*="profile.css"]')) return;
-    const cssPath = window.ByteWard ? window.ByteWard.buildFullPath(window.ByteWard.APP_CONFIG.ASSETS.profileCSS) : '/assets/css/profile.css';
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = cssPath;
-    link.id = 'profile-css';
-    link.onerror = () => { console.warn('Profile CSS gagal dimuat'); injectFallbackCSS(); };
-    link.onload = () => {
-        const additionalStyles = document.createElement('style');
-        additionalStyles.textContent = `
-            .profile-button-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-            .profile-button { width: 50px; height: 50px; border-radius: 50%; border: none; background: white; cursor: pointer; padding: 0; position: relative; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); transition: all 0.3s ease; overflow: hidden; }
-            .profile-button:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); }
-            .profile-image { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-            .profile-indicator { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; animation: pulse 2s infinite; }
-            
-            /* Styling untuk tombol logout */
-            .logout-btn {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 14px 24px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                min-width: 100px;
-            }
-            
-            .logout-btn:hover:not(:disabled) {
-                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-            }
-            
-            .logout-btn:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-            }
-            
-            .profile-actions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 12px;
-                margin-top: 24px;
-            }
-            
-            .profile-actions .save-btn {
-                flex: 2;
-                min-width: 150px;
-            }
-            
-            .profile-actions .cancel-btn,
-            .profile-actions .logout-btn {
-                flex: 1;
-                min-width: 100px;
-            }
-            
-            @media (max-width: 480px) {
-                .profile-actions {
-                    flex-direction: column;
-                }
-                
-                .profile-actions button {
-                    width: 100%;
-                }
-            }
-            
-            @keyframes pulse { 
-                0%, 100% { transform: scale(1); } 
-                50% { transform: scale(1.1); } 
-            }
-            
-            @media (max-width: 768px) { 
-                .profile-button-container { top: 10px; right: 10px; } 
-                .profile-button { width: 40px; height: 40px; } 
-            }
-        `;
-        document.head.appendChild(additionalStyles);
-    };
-    document.head.appendChild(link);
-}
-
-function injectFallbackCSS() {
-    if (document.querySelector('#profile-fallback-css')) return;
+    if (document.querySelector('#profile-css')) return;
+    
     const style = document.createElement('style');
-    style.id = 'profile-fallback-css';
+    style.id = 'profile-css';
     style.textContent = `
-        .profile-button-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-        .profile-button { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #3b82f6; background: white; cursor: pointer; padding: 0; position: relative; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
-        .profile-image { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        /* ==================== ANIMASI HALUS ==================== */
+        .profile-overlay.active .profile-panel {
+            animation: panelIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes panelIn {
+            0% {
+                transform: translateY(20px) scale(0.97);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Transisi antar mode - reusable */
+        .mode-transition-enter {
+            animation: modeFadeIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .mode-transition-exit {
+            animation: modeFadeOut 0.2s ease forwards;
+        }
+
+        @keyframes modeFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes modeFadeOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Micro-interaction avatar selection */
+        .avatar-item {
+            transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .avatar-item.selected {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 
+                        0 6px 20px rgba(99, 102, 241, 0.15);
+            transform: scale(1.05);
+        }
+
+        /* Ripple feedback untuk tombol */
+        .btn {
+            transition: transform 0.12s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                #f0f0f0 25%,
+                #e0e0e0 50%,
+                #f0f0f0 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 16px;
+        }
+
+        .skeleton-circle {
+            border-radius: 50%;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-text:last-child {
+            margin-bottom: 0;
+        }
+
+        .skeleton-text.short {
+            width: 60%;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            .profile-panel,
+            .mode-transition-enter,
+            .mode-transition-exit,
+            .edit-avatar-mode.mode-transition-enter,
+            .avatar-item,
+            .btn,
+            .profile-indicator,
+            .skeleton {
+                animation: none !important;
+                transition: none !important;
+            }
+            
+            .profile-overlay.active .profile-panel {
+                transform: none;
+                opacity: 1;
+            }
+            
+            .avatar-item.selected {
+                transform: none;
+            }
+        }
+
+        /* ==================== PROFILE HEADER ==================== */
+        .profile-header {
+            padding: 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .profile-header h2 {
+            font-size: clamp(20px, 2vw, 28px);
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .close-profile {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+
+        .close-profile:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        /* ==================== VIEW MODE ==================== */
+        .view-mode {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .view-avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 6px solid white;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        .incomplete-badge {
+            position: absolute;
+            top: 10px;
+            right: calc(50% - 70px);
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 900;
+            border: 3px solid white;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .user-name {
+            font-size: clamp(24px, 3vw, 32px);
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+            line-height: 1.2;
+            word-break: break-word;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .user-email {
+            font-size: clamp(14px, 1.5vw, 16px);
+            color: #6b7280;
+            margin-bottom: 24px;
+            word-break: break-all;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .user-stats {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            display: inline-block;
+            border: 1px solid #e5e7eb;
+            min-width: 180px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: clamp(32px, 4vw, 42px);
+            font-weight: 800;
+            color: #6366f1;
+            line-height: 1;
+            margin-bottom: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .stat-label {
+            font-size: clamp(13px, 1.5vw, 14px);
+            color: #6b7280;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .view-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        /* ==================== EDIT MODE ==================== */
+        .edit-mode {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .edit-avatar-section {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .edit-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        .edit-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+
+        .avatar-edit-btn {
+            background: none;
+            border: none;
+            color: #6366f1;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+            font-family: inherit;
+        }
+
+        .avatar-edit-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .edit-form {
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 16px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .edit-actions {
+                flex-direction: column;
+                gap: 12px;
+                max-width: 100%;
+            }
+        }
+
+        /* ==================== EDIT AVATAR MODE ==================== */
+        .edit-avatar-mode {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .edit-avatar-mode h3 {
+            font-size: clamp(18px, 2vw, 22px);
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.3;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+            padding: 8px;
+        }
+
+        /* Layout mobile avatar grid */
+        @media (max-width: 768px) {
+            .avatar-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                padding: 4px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .avatar-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+        }
+
+        .avatar-item {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            background: #f8fafc;
+            position: relative;
+        }
+
+        .avatar-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ==================== CUSTOM AVATAR PREVIEW ==================== */
+        .custom-avatar-preview {
+            width: 100%;
+            display: none;
+            margin: 0 auto 28px;
+        }
+
+        .custom-avatar-preview.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            background: #f8fafc;
+        }
+
+        .preview-title {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            z-index: 2;
+            opacity: 0.8;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            display: block;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        .upload-avatar {
+            text-align: center;
+            margin-bottom: 28px;
+            padding: 0 16px;
+        }
+
+        .edit-avatar-actions {
+            display: flex;
+            justify-content: center;
+            padding: 0 16px;
+        }
+
+        /* ==================== BUTTON STYLES ==================== */
+        .btn {
+            padding: 18px 32px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 56px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-back {
+            padding: 14px 28px;
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 280px;
+            font-family: inherit;
+        }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            font-family: inherit;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        /* ==================== LOADING STATES ==================== */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            flex-shrink: 0;
+            margin: 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        /* ==================== SCROLLBAR STYLING ==================== */
+        .profile-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .profile-panel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .profile-panel::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .profile-panel::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* ==================== Hover state untuk desktop avatar grid ==================== */
+        @media (hover: hover) and (min-width: 769px) {
+            .avatar-item:hover:not(.selected) {
+                transform: scale(1.03);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            }
+        }
     `;
     document.head.appendChild(style);
 }
 
+// =======================
+// INITIALIZATION
+// =======================
 function initializeUISystem() {
-    console.log(`🚀 Initializing UI System v${UI_CONFIG.version}...`);
+    console.log(`🚀 Initializing ByteWard UI v${UI_CONFIG.version}...`);
+    
     try {
+        // Inject CSS
         injectProfileCSS();
         
-        if (!window.UI.Modal) {
-            window.UI.Modal = new window.ModalSystemClass();
+        // Initialize keyboard navigation
+        initKeyboardNavigation();
+        
+        // Create profile button if user is logged in
+        if (window.Auth?.currentUser) {
+            setTimeout(() => {
+                createProfileButton();
+                console.log('✅ Profile button created');
+            }, 1000);
         }
         
-        if (!window.UI.Toast) {
-            window.UI.Toast = new window.ToastSystemClass();
+        // Listen for auth state changes
+        if (window.Auth) {
+            const originalSetUserData = window.Auth.setUserData;
+            if (originalSetUserData) {
+                window.Auth.setUserData = function(data) {
+                    originalSetUserData.call(this, data);
+                    updateProfileButton();
+                };
+            }
         }
         
-        if (window.Auth && window.Auth.currentUser) {
-            setTimeout(() => { createProfileButton(); console.log('✅ Profile button created'); }, 1000);
-        }
-        
-        window.addEventListener('error', (event) => showError(event.message));
-        window.addEventListener('unhandledrejection', (event) => showError(event.reason?.message || 'Unhandled Promise Rejection'));
-        console.log('✅ UI System successfully initialized');
+        console.log('✅ ByteWard UI v2.0 successfully initialized');
     } catch (error) {
         console.error('❌ Failed to initialize UI System:', error);
-        showError(`UI System initialization failed: ${error.message}`);
     }
 }
 
+// =======================
+// PUBLIC API
+// =======================
+window.ByteWardUI = window.ByteWardUI || {};
+Object.assign(window.ByteWardUI, {
+    config: UI_CONFIG,
+    state: UIState,
+    showProfilePanel,
+    hideProfilePanel,
+    updateProfileButton,
+    saveProfile,
+    showStatus,
+    initialize: initializeUISystem
+});
+
+// =======================
+// BACKWARD COMPATIBILITY
+// =======================
 window.UI = window.UI || {};
 Object.assign(window.UI, {
-    config: UI_CONFIG, 
-    createProfileButton, 
-    updateProfileButton, 
-    createProfilePanel, 
-    initializeProfilePanel, 
-    populateAvatarOptions, 
-    selectAvatar, 
-    handleAvatarUpload, 
-    checkForChanges, 
-    showProfilePanel, 
-    hideProfilePanel, 
-    showStatus, 
-    saveProfile, 
-    updateSaveButtonState,
-    confirmAndLogout, // Fungsi logout dengan konfirmasi
-    logoutUser, // Alias untuk logout
-    injectProfileCSS, 
-    injectFallbackCSS, 
-    showAuthLoading, 
-    hideAuthLoading, 
-    injectLoadingCSS, 
-    showError, 
-    injectErrorCSS: injectFallbackCSS, 
-    generateDefaultAvatar, 
+    createProfileButton,
+    updateProfileButton,
+    showProfilePanel,
+    hideProfilePanel,
+    saveProfile,
+    showStatus,
     initialize: initializeUISystem
 });
 
@@ -1361,8 +2018,4 @@ if (document.readyState === 'loading') {
     setTimeout(initializeUISystem, 100);
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { UI: window.UI, Modal: window.UI.Modal, Toast: window.UI.Toast };
-}
-
-console.log(`🎨 UI Module v${UI_CONFIG.version} - Production Ready with Logout Feature`);
+console.log(`🎨 ByteWard UI Module v${UI_CONFIG.version} - Production Ready dengan Sistem Profil 3 Mode`);
