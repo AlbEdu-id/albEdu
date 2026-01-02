@@ -1,5 +1,5 @@
-// ByteWard Auth Module v0.5.5 - Event-Driven Architecture
-console.log('🔐 Memuat Auth Module v0.5.5 - Event-Driven & UI-Safe');
+// ByteWard Auth Module v0.5.6 - Event-Driven dengan Base Path Fix
+console.log('🔐 Memuat Auth Module v0.5.6 - Event-Driven dengan Base Path Support');
 
 let currentUser = null;
 let userRole = null;
@@ -11,7 +11,18 @@ let isSystemInitialized = false;
 let authStateChangeTimeout = null;
 
 // ============================================
-// KONTRAK AUTH ⇄ UI v0.5.5
+// CONFIGURATION - BASE PATH SUPPORT
+// ============================================
+const APP_CONFIG = {
+    BASE_PATH: '/AlbEdu/', // ✅ BASE PATH yang benar
+    LOGIN_PAGE: 'login.html',
+    getLoginUrl: function() {
+        return this.BASE_PATH + this.LOGIN_PAGE;
+    }
+};
+
+// ============================================
+// KONTRAK AUTH ⇄ UI v0.5.6
 // ============================================
 // Auth HANYA berkomunikasi ke UI melalui:
 // 1. UI.afterLogin()    - Saat login/session restore berhasil
@@ -32,13 +43,31 @@ function checkProfileCompleteness(data) {
 }
 
 // ============================================
+// PATH HELPER FUNCTIONS
+// ============================================
+function redirectToLogin() {
+    console.log('🔀 Redirect ke login page:', APP_CONFIG.getLoginUrl());
+    window.location.href = APP_CONFIG.getLoginUrl();
+}
+
+function isLoginPage() {
+    return window.location.pathname.includes(APP_CONFIG.LOGIN_PAGE);
+}
+
+function isWithinAppScope() {
+    const currentPath = window.location.pathname;
+    return currentPath.startsWith(APP_CONFIG.BASE_PATH) && 
+           !currentPath.includes('login.html') &&
+           !currentPath.includes('404');
+}
+
+// ============================================
 // EVENT-DRIVEN USER DATA FETCH
 // ============================================
 async function fetchUserData(userId) {
     console.log('📡 Mengambil data user dari Firestore...');
 
     return new Promise((resolve, reject) => {
-        // Clean up previous listener
         if (profileListener) {
             profileListener();
             profileListener = null;
@@ -47,7 +76,6 @@ async function fetchUserData(userId) {
         const ref = firebaseDb.collection('users').doc(userId);
         let resolved = false;
 
-        // Safety timeout untuk mencegah stuck
         const fetchTimeout = setTimeout(() => {
             if (!resolved) {
                 console.warn('⚠️ Fetch user data timeout, menggunakan data default');
@@ -74,7 +102,7 @@ async function fetchUserData(userId) {
                 resolved = true;
                 resolve(defaultData);
             }
-        }, 8000); // 8 detik timeout
+        }, 8000);
 
         profileListener = ref.onSnapshot(async (snap) => {
             try {
@@ -83,7 +111,6 @@ async function fetchUserData(userId) {
                 if (snap.exists) {
                     const data = snap.data();
                     
-                    // Ensure required fields
                     if (!data.nama) data.nama = '';
                     if (!data.foto_profil) {
                         data.foto_profil = generateDefaultAvatar(data.email || userId);
@@ -93,7 +120,6 @@ async function fetchUserData(userId) {
                     userData = data;
                     userRole = data.peran || 'siswa';
 
-                    // Initialize profile state if needed
                     if (!userProfileState) {
                         userProfileState = {
                             isProfileComplete: false,
@@ -102,7 +128,6 @@ async function fetchUserData(userId) {
                         };
                     }
                     
-                    // Update profile completeness
                     userProfileState.isProfileComplete = checkProfileCompleteness(data);
 
                     if (!resolved) {
@@ -183,7 +208,6 @@ async function authLogout() {
     try {
         console.log('🚪 Memulai logout...');
         
-        // Clean up Firestore listener
         if (profileListener) {
             profileListener();
             profileListener = null;
@@ -203,13 +227,12 @@ async function authLogout() {
 // ============================================
 async function handleAuthStateChange(user) {
     try {
-        // Clear any existing timeout
         if (authStateChangeTimeout) {
             clearTimeout(authStateChangeTimeout);
             authStateChangeTimeout = null;
         }
         
-        // Set safety timeout (10 detik)
+        // Safety timeout
         authStateChangeTimeout = setTimeout(() => {
             console.warn('⚠️ Auth state change timeout - forcing resolution');
             authReady = true;
@@ -226,17 +249,22 @@ async function handleAuthStateChange(user) {
                 await fetchUserData(user.uid);
                 authReady = true;
                 
-                // Notify UI melalui lifecycle
+                // Cek jika di login page, redirect ke dashboard
+                if (isLoginPage()) {
+                    console.log('🔄 Redirect dari login page ke dashboard...');
+                    // Ganti dengan path dashboard yang benar
+                    window.location.href = APP_CONFIG.BASE_PATH + 'dashboard.html';
+                    return;
+                }
+                
                 if (window.UI && window.UI.afterLogin) {
                     window.UI.afterLogin();
                 }
                 
             } catch (fetchError) {
                 console.error('❌ Gagal fetch user data:', fetchError);
-                // Tetap set authReady agar UI tidak stuck
                 authReady = true;
                 
-                // Notify UI bahwa login gagal
                 if (window.UI && window.UI.hideAuthLoading) {
                     window.UI.hideAuthLoading();
                 }
@@ -251,7 +279,15 @@ async function handleAuthStateChange(user) {
             userProfileState = null;
             authReady = true;
             
-            // Notify UI melalui lifecycle
+            // Cek jika perlu redirect ke login
+            if (isWithinAppScope() && !isLoginPage()) {
+                console.log('🔀 User logout, redirect ke login...');
+                setTimeout(() => {
+                    redirectToLogin();
+                }, 500); // Delay sedikit untuk UX
+                return;
+            }
+            
             if (window.UI && window.UI.afterLogout) {
                 window.UI.afterLogout();
             }
@@ -264,11 +300,9 @@ async function handleAuthStateChange(user) {
             stack: err.stack
         });
         
-        // Fallback: selalu set authReady meski error
         authReady = true;
         
     } finally {
-        // SELALU tutup loading dan clear timeout
         if (authStateChangeTimeout) {
             clearTimeout(authStateChangeTimeout);
             authStateChangeTimeout = null;
@@ -290,7 +324,8 @@ async function initializeSystem() {
     }
     isSystemInitialized = true;
 
-    console.log('⚙️ Menginisialisasi ByteWard Auth v0.5.5...');
+    console.log('⚙️ Menginisialisasi ByteWard Auth v0.5.6...');
+    console.log('📁 Base Path:', APP_CONFIG.BASE_PATH);
 
     if (typeof firebase === 'undefined' || !firebase.auth) {
         console.error('❌ Firebase tidak tersedia');
@@ -301,9 +336,8 @@ async function initializeSystem() {
     }
 
     try {
-        // Set up Firebase auth state observer (SATU-SATUNYA sumber kebenaran)
         firebaseAuth.onAuthStateChanged(handleAuthStateChange);
-        console.log('✅ Auth observer berjalan - Event-Driven Ready');
+        console.log('✅ Auth observer berjalan');
         
     } catch (initError) {
         console.error('❌ Gagal inisialisasi auth:', initError);
@@ -316,13 +350,16 @@ async function initializeSystem() {
 }
 
 function debugByteWard() {
-    console.log('=== ByteWard Debug Info v0.5.5 ===');
+    console.log('=== ByteWard Debug Info v0.5.6 ===');
+    console.log('Base Path:', APP_CONFIG.BASE_PATH);
+    console.log('Current Path:', window.location.pathname);
+    console.log('Is Login Page:', isLoginPage());
+    console.log('Is Within App:', isWithinAppScope());
     console.log('Current User:', currentUser?.email);
     console.log('User Role:', userRole);
     console.log('User Data:', userData);
     console.log('Profile Complete:', userProfileState?.isProfileComplete);
     console.log('Auth Ready:', authReady);
-    console.log('Profile Listener Active:', !!profileListener);
     console.log('==========================');
 }
 
@@ -342,17 +379,20 @@ window.Auth = {
     checkProfileCompleteness,
     generateDefaultAvatar,
     
-    // UI Event Handler (untuk komunikasi dari UI ke Auth)
+    // Path Functions (untuk UI jika perlu)
+    redirectToLogin,
+    isLoginPage,
+    getBasePath: () => APP_CONFIG.BASE_PATH,
+    
+    // UI Event Handler
     setUserData: function(data) {
         userData = data;
-        // Update profile state
         if (userProfileState) {
             userProfileState.isProfileComplete = checkProfileCompleteness(data);
         }
     }
 };
 
-// Getters/Setters - Backward Compatible
 Object.defineProperties(window.Auth, {
     currentUser: { 
         get: () => currentUser, 
@@ -379,7 +419,7 @@ Object.defineProperties(window.Auth, {
     }
 });
 
-// Initialize on DOM ready dengan timeout safety
+// Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (typeof firebaseAuth === 'undefined') {
@@ -393,4 +433,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 300);
 });
 
-console.log('🔐 Auth Module v0.5.5 - Event-Driven & UI-Safe Loaded');
+console.log('🔐 Auth Module v0.5.6 - Event-Driven dengan Base Path Fix');
