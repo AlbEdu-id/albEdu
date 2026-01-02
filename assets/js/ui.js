@@ -1,10 +1,66 @@
-// ByteWard UI Module v0.5.4 - Production Ready with Auth System Integration
-console.log('🎨 Memuat UI Module v0.5.4 - Sistem berbasis Auth dengan 3 Mode Profil');
+// ByteWard UI Module v0.5.5 - Production Ready with External CSS
+console.log('🎨 Memuat UI Module v0.5.5 - Sistem berbasis Auth dengan CSS Eksternal');
 
 // =======================
 // MODULE STRUCTURE (FIXED)
 // =======================
 window.UI = window.UI || {};
+
+// =======================
+// LOAD PROFILE CSS
+// =======================
+(function loadProfileCSS() {
+    // Cek apakah CSS profile sudah dimuat
+    if (!document.querySelector('#profile-css')) {
+        const link = document.createElement('link');
+        link.id = 'profile-css';
+        link.rel = 'stylesheet';
+        link.href = 'assets/css/profile.css';
+        
+        link.onload = () => console.log('✅ Profile CSS berhasil dimuat');
+        link.onerror = () => {
+            console.warn('⚠️ Gagal memuat profile.css, menggunakan fallback');
+            injectFallbackCSS();
+        };
+        
+        document.head.appendChild(link);
+    }
+    
+    function injectFallbackCSS() {
+        // Fallback minimal jika CSS gagal dimuat
+        const style = document.createElement('style');
+        style.textContent = `
+            .profile-button-container {
+                position: fixed;
+                top: 24px;
+                right: 24px;
+                z-index: 10000;
+            }
+            .profile-button {
+                width: 68px;
+                height: 68px;
+                border-radius: 50%;
+                border: none;
+                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                cursor: pointer;
+                padding: 4px;
+                position: relative;
+                box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow: visible;
+            }
+            .profile-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+                border: 3px solid white;
+                display: block;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+})();
 
 // =======================
 // AUTH UI (BACKWARD COMPATIBLE)
@@ -128,26 +184,21 @@ UI.hideAuthLoading = function() {
 UI.showLoginError = function(message) {
     console.error('Login error:', message);
     
-    // Use existing toast system if available
     if (window.UI.Toast) {
         window.UI.Toast.error(message, 4000);
     } else {
-        // Fallback alert
         alert('Login Error: ' + message);
     }
     
-    // Ensure loading is hidden
     this.hideAuthLoading();
 };
 
 UI.afterLogin = function() {
     console.log('✅ Login berhasil, mempersiapkan UI...');
     
-    // Create profile button
     setTimeout(() => {
         UI.Profile.init();
         
-        // Update any existing UI
         if (window.Auth?.currentUser) {
             console.log('🔄 Memperbarui UI setelah login');
         }
@@ -157,14 +208,11 @@ UI.afterLogin = function() {
 UI.afterLogout = function() {
     console.log('✅ Logout berhasil, membersihkan UI...');
     
-    // Remove profile button
     const profileButton = document.querySelector('.profile-button-container');
     if (profileButton) profileButton.remove();
     
-    // Close profile panel if open
     UI.Profile.close();
     
-    // Clean up any UI elements
     const overlay = document.getElementById('profileOverlay');
     if (overlay) overlay.remove();
     
@@ -173,13 +221,12 @@ UI.afterLogout = function() {
 };
 
 // =======================
-// ANIMATION SYSTEM (From PrototypeV2)
+// ANIMATION SYSTEM
 // =======================
 UI.Animate = {
     panelIn: function(panel) {
         if (!panel) return;
         
-        // Reset untuk animasi masuk
         panel.style.transform = 'translateY(20px) scale(0.97)';
         panel.style.opacity = '0';
         
@@ -212,26 +259,22 @@ UI.Animate = {
         }
         
         return new Promise((resolve) => {
-            // Set initial states
             oldElement.style.position = 'absolute';
             oldElement.style.width = '100%';
             newElement.style.position = 'relative';
             newElement.style.opacity = '0';
             newElement.style.transform = direction === 'next' ? 'translateX(20px)' : 'translateX(-20px)';
             
-            // Animate old element out
             oldElement.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             oldElement.style.opacity = '0';
             oldElement.style.transform = direction === 'next' ? 'translateX(-20px)' : 'translateX(20px)';
             
             setTimeout(() => {
-                // Animate new element in
                 newElement.style.transition = 'opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)';
                 newElement.style.opacity = '1';
                 newElement.style.transform = 'translateX(0)';
                 
                 setTimeout(() => {
-                    // Cleanup
                     oldElement.style.position = '';
                     oldElement.style.width = '';
                     oldElement.style.opacity = '';
@@ -252,7 +295,7 @@ UI.Animate = {
 };
 
 // =======================
-// AVATAR SYSTEM (From PrototypeV2 - UI only)
+// AVATAR SYSTEM
 // =======================
 const AvatarSystem = {
     generateAvatars: function(count = 20) {
@@ -282,7 +325,7 @@ const AvatarSystem = {
             return { valid: false, error: 'Hanya file gambar yang diperbolehkan' };
         }
             
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
             return { valid: false, error: `Ukuran gambar maksimal ${maxSize / 1024 / 1024}MB` };
         }
@@ -292,22 +335,16 @@ const AvatarSystem = {
 };
 
 // =======================
-// PROFILE SYSTEM (CORE v0.5.4)
+// PROFILE SYSTEM (CORE v0.5.5)
 // =======================
 UI.Profile = {
     init: function() {
-        console.log('🔄 Menginisialisasi Profile System v0.5.4');
+        console.log('🔄 Menginisialisasi Profile System v0.5.5');
         
-        // Inject CSS jika belum ada
-        this.injectProfileCSS();
-        
-        // Create profile button
+        // CSS sudah dimuat via loadProfileCSS()
         this.createProfileButton();
-        
-        // Initialize keyboard navigation
         this.initKeyboardNavigation();
         
-        // Listen for auth state changes
         if (window.Auth?.setUserData) {
             const originalSetUserData = window.Auth.setUserData;
             window.Auth.setUserData = function(data) {
@@ -320,7 +357,6 @@ UI.Profile = {
     },
     
     open: function(mode = 'view') {
-        // Set initial state
         if (window.Auth) {
             window.Auth.profileState = {
                 mode: mode,
@@ -331,13 +367,9 @@ UI.Profile = {
             };
         }
         
-        // Create panel
         this.createProfilePanel();
-        
-        // Render based on mode
         this.render();
         
-        // Show with animation
         const overlay = document.getElementById('profileOverlay');
         const panel = document.getElementById('profilePanel');
         
@@ -347,7 +379,6 @@ UI.Profile = {
                 overlay.style.opacity = '1';
                 UI.Animate.panelIn(panel);
                 
-                // Focus trap
                 const closeBtn = document.getElementById('closeProfile');
                 if (closeBtn) setTimeout(() => closeBtn.focus(), 100);
             }, 10);
@@ -365,11 +396,9 @@ UI.Profile = {
                     setTimeout(() => {
                         overlay.style.display = 'none';
                         
-                        // Reset file inputs
                         const uploadInput = document.getElementById('avatarUpload');
                         if (uploadInput) uploadInput.value = '';
                         
-                        // Return focus to profile button
                         const profileBtn = document.getElementById('profileTrigger');
                         if (profileBtn) profileBtn.focus();
                     }, 300);
@@ -379,7 +408,6 @@ UI.Profile = {
             overlay.style.display = 'none';
         }
         
-        // Reset state
         if (window.Auth?.profileState) {
             window.Auth.profileState.mode = 'view';
             window.Auth.profileState.hasChanges = false;
@@ -391,13 +419,11 @@ UI.Profile = {
         const panel = document.getElementById('profilePanel');
         if (!panel) return;
         
-        // Get current state from Auth
         const state = window.Auth?.profileState || { mode: 'view' };
         const user = window.Auth?.userData || {};
         
         let content = '';
         
-        // Show skeleton if loading
         if (state.isLoading && state.mode === 'view') {
             content = this.renderSkeleton();
         } else {
@@ -425,12 +451,10 @@ UI.Profile = {
             ${content}
         `;
         
-        // Bind events
         this.bindPanelEvents();
     },
     
     save: async function() {
-        // Validate Auth system
         if (!window.Auth || !window.Auth.currentUser || !window.Auth.userData) {
             this.showStatus('Sistem auth tidak tersedia', 'error');
             return;
@@ -439,14 +463,12 @@ UI.Profile = {
         const state = window.Auth.profileState;
         if (!state.hasChanges || state.isLoading) return;
         
-        // Check online status
         if (!navigator.onLine) {
             this.showStatus('Anda sedang offline. Periksa koneksi internet.', 'error');
             return;
         }
         
         try {
-            // Start loading
             if (window.Auth.profileState) {
                 window.Auth.profileState.isLoading = true;
                 window.Auth.profileState.mode = 'view';
@@ -456,7 +478,6 @@ UI.Profile = {
             
             const updates = {};
             
-            // Update name if changed
             if (state.tempName !== undefined && state.tempName !== window.Auth.userData.nama) {
                 const cleanName = state.tempName.trim();
                 if (cleanName.length > 0) {
@@ -466,45 +487,36 @@ UI.Profile = {
                 }
             }
             
-            // Update avatar if changed
             if (state.tempAvatar && state.tempAvatar !== window.Auth.userData.foto_profil) {
                 updates.foto_profil = state.tempAvatar;
             }
             
-            // Determine if profile is complete
             const finalName = updates.nama || window.Auth.userData.nama || '';
             const finalAvatar = updates.foto_profil || window.Auth.userData.foto_profil || '';
             updates.profilLengkap = finalName.trim().length > 0 && finalAvatar.trim().length > 0;
             updates.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
             
-            // Remove protected fields
             delete updates.email;
             delete updates.peran;
             delete updates.id;
             delete updates.createdAt;
             
-            // Update Firestore
             await firebase.firestore().collection('users').doc(window.Auth.currentUser.uid).update(updates);
             
-            // Update Auth state
             window.Auth.userData = { ...window.Auth.userData, ...updates };
             
-            // Update profile state
             if (window.Auth.profileState) {
                 window.Auth.profileState.hasChanges = false;
                 window.Auth.profileState.tempAvatar = null;
                 window.Auth.profileState.isLoading = false;
             }
             
-            // Update UI
             this.updateProfileButton();
             this.render();
             UI.hideAuthLoading();
             
-            // Show success message
             this.showStatus('Profil berhasil disimpan!', 'success');
             
-            // Auto close if profile is now complete
             if (updates.profilLengkap) {
                 setTimeout(() => {
                     this.close();
@@ -523,7 +535,6 @@ UI.Profile = {
             
             this.showStatus(userMessage, 'error');
             
-            // Reset loading state
             if (window.Auth.profileState) {
                 window.Auth.profileState.isLoading = false;
             }
@@ -704,13 +715,11 @@ UI.Profile = {
     
     // ==================== EVENT BINDING ====================
     bindPanelEvents: function() {
-        // Close button
         const closeBtn = document.getElementById('closeProfile');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.close());
         }
         
-        // Overlay click
         const overlay = document.getElementById('profileOverlay');
         if (overlay) {
             overlay.addEventListener('click', (e) => {
@@ -720,7 +729,6 @@ UI.Profile = {
             });
         }
         
-        // Mode-specific events
         const state = window.Auth?.profileState || { mode: 'view' };
         switch (state.mode) {
             case 'view':
@@ -736,11 +744,9 @@ UI.Profile = {
     },
     
     bindViewModeEvents: function() {
-        // Edit Profile button
         const editBtn = document.getElementById('editProfileBtn');
         if (editBtn) {
             editBtn.addEventListener('click', () => {
-                // Update state
                 if (window.Auth.profileState) {
                     window.Auth.profileState.mode = 'edit';
                     window.Auth.profileState.tempName = window.Auth.userData?.nama || '';
@@ -749,7 +755,6 @@ UI.Profile = {
             });
         }
         
-        // Logout button
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.showLogoutModal());
@@ -757,7 +762,6 @@ UI.Profile = {
     },
     
     bindEditModeEvents: function() {
-        // Name input
         const nameInput = document.getElementById('editName');
         if (nameInput) {
             nameInput.value = window.Auth?.userData?.nama || '';
@@ -772,11 +776,9 @@ UI.Profile = {
                 }
             });
             
-            // Auto-focus
             setTimeout(() => nameInput.focus(), 50);
         }
         
-        // Edit Avatar button
         const editAvatarBtn = document.getElementById('editAvatarBtn');
         if (editAvatarBtn) {
             editAvatarBtn.addEventListener('click', () => {
@@ -787,13 +789,11 @@ UI.Profile = {
             });
         }
         
-        // Save button
         const saveBtn = document.getElementById('saveProfileBtn');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => this.save());
         }
         
-        // Cancel button
         const cancelBtn = document.getElementById('cancelEditBtn');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => {
@@ -808,28 +808,23 @@ UI.Profile = {
     },
     
     bindAvatarModeEvents: function() {
-        // Avatar selection
         const avatarItems = document.querySelectorAll('.avatar-item');
         avatarItems.forEach(item => {
             item.addEventListener('click', (e) => {
-                // Remove selected class from all
                 avatarItems.forEach(i => {
                     i.classList.remove('selected');
                     i.setAttribute('aria-selected', 'false');
                 });
                 
-                // Add to clicked
                 item.classList.add('selected');
                 item.setAttribute('aria-selected', 'true');
                 
-                // Update state
                 const avatarUrl = item.dataset.url;
                 if (window.Auth.profileState) {
                     window.Auth.profileState.tempAvatar = avatarUrl;
                     window.Auth.profileState.hasChanges = true;
                 }
                 
-                // Hide custom preview
                 const previewContainer = document.getElementById('customAvatarPreviewContainer');
                 if (previewContainer) {
                     previewContainer.classList.remove('active');
@@ -840,7 +835,6 @@ UI.Profile = {
             });
         });
         
-        // Custom upload
         const uploadInput = document.getElementById('avatarUpload');
         if (uploadInput) {
             uploadInput.addEventListener('change', (e) => this.handleAvatarUpload(e));
@@ -853,7 +847,6 @@ UI.Profile = {
             }
         }
         
-        // Back button
         const backBtn = document.getElementById('backToEditBtn');
         if (backBtn) {
             backBtn.addEventListener('click', () => {
@@ -886,23 +879,19 @@ UI.Profile = {
         
         const reader = new FileReader();
         reader.onload = (e) => {
-            // Update state
             if (window.Auth.profileState) {
                 window.Auth.profileState.tempAvatar = e.target.result;
                 window.Auth.profileState.hasChanges = true;
             }
             
-            // Update selected visual
             const avatarItems = document.querySelectorAll('.avatar-item');
             avatarItems.forEach(item => {
                 item.classList.remove('selected');
                 item.setAttribute('aria-selected', 'false');
             });
             
-            // Show preview
             this.showStatus('Avatar custom berhasil diunggah!', 'success');
             
-            // Render preview
             const previewContainer = document.createElement('div');
             previewContainer.id = 'customAvatarPreviewContainer';
             previewContainer.className = 'custom-avatar-preview active';
@@ -923,7 +912,6 @@ UI.Profile = {
                 avatarGrid.parentNode.insertBefore(previewContainer, avatarGrid);
             }
             
-            // Reset file input
             event.target.value = '';
         };
         reader.readAsDataURL(file);
@@ -967,11 +955,9 @@ UI.Profile = {
     
     // ==================== PROFILE BUTTON ====================
     createProfileButton: function() {
-        // Remove existing
         const existing = document.querySelector('.profile-button-container');
         if (existing) existing.remove();
         
-        // Create container
         const container = document.createElement('div');
         container.className = 'profile-button-container';
         container.style.cssText = `
@@ -981,37 +967,19 @@ UI.Profile = {
             z-index: 10000;
         `;
         
-        // Create button
         const button = document.createElement('button');
         button.className = 'profile-button';
         button.id = 'profileTrigger';
         button.setAttribute('aria-label', 'Buka panel profil');
-        button.style.cssText = `
-            width: 68px;
-            height: 68px;
-            border-radius: 50%;
-            border: none;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            cursor: pointer;
-            padding: 4px;
-            position: relative;
-            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: visible;
-        `;
         
-        // Add hover effects
         button.addEventListener('mouseenter', () => {
-            button.style.transform = 'scale(1.1)';
-            button.style.boxShadow = '0 12px 40px rgba(99, 102, 241, 0.6)';
+            button.classList.add('profile-button-hover');
         });
         
         button.addEventListener('mouseleave', () => {
-            button.style.transform = 'scale(1)';
-            button.style.boxShadow = '0 8px 32px rgba(99, 102, 241, 0.4)';
+            button.classList.remove('profile-button-hover');
         });
         
-        // Add avatar image
         const user = window.Auth?.userData || {};
         const avatarUrl = user.foto_profil || AvatarSystem.getDefaultAvatar(window.Auth?.currentUser?.email || 'user');
         
@@ -1019,50 +987,20 @@ UI.Profile = {
         img.src = avatarUrl;
         img.alt = 'Profile';
         img.className = 'profile-image';
-        img.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 3px solid white;
-            display: block;
-        `;
-        
         img.onerror = function() {
             this.src = AvatarSystem.getDefaultAvatar('user');
         };
         
         button.appendChild(img);
         
-        // Add indicator if profile incomplete
         if (window.Auth?.userData && !window.Auth.userData.profilLengkap) {
             const indicator = document.createElement('div');
             indicator.className = 'profile-indicator';
             indicator.setAttribute('aria-hidden', 'true');
             indicator.textContent = '!';
-            indicator.style.cssText = `
-                position: absolute;
-                top: -4px;
-                right: -4px;
-                width: 26px;
-                height: 26px;
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 13px;
-                font-weight: 900;
-                border: 2.5px solid white;
-                z-index: 10;
-                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-                transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            `;
             button.appendChild(indicator);
         }
         
-        // Add click event
         button.addEventListener('click', () => this.open('view'));
         container.appendChild(button);
         document.body.appendChild(container);
@@ -1072,7 +1010,6 @@ UI.Profile = {
         const button = document.getElementById('profileTrigger');
         if (!button) return;
         
-        // Update image
         const img = button.querySelector('.profile-image');
         if (img && window.Auth?.userData?.foto_profil) {
             const oldSrc = img.src;
@@ -1084,7 +1021,6 @@ UI.Profile = {
             };
         }
         
-        // Update indicator
         const indicator = button.querySelector('.profile-indicator');
         if (window.Auth?.userData?.profilLengkap) {
             if (indicator) indicator.remove();
@@ -1093,39 +1029,18 @@ UI.Profile = {
             newIndicator.className = 'profile-indicator';
             newIndicator.setAttribute('aria-hidden', 'true');
             newIndicator.textContent = '!';
-            newIndicator.style.cssText = `
-                position: absolute;
-                top: -4px;
-                right: -4px;
-                width: 26px;
-                height: 26px;
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 13px;
-                font-weight: 900;
-                border: 2.5px solid white;
-                z-index: 10;
-                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-                transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            `;
             button.appendChild(newIndicator);
         }
     },
     
     // ==================== PANEL CREATION ====================
     createProfilePanel: function() {
-        // Remove existing
         const existingOverlay = document.getElementById('profileOverlay');
         if (existingOverlay) existingOverlay.remove();
         
         const existingModal = document.getElementById('logoutModal');
         if (existingModal) existingModal.remove();
         
-        // Create overlay
         const overlay = document.createElement('div');
         overlay.className = 'profile-overlay';
         overlay.id = 'profileOverlay';
@@ -1146,7 +1061,6 @@ UI.Profile = {
             transition: opacity 0.3s ease;
         `;
         
-        // Create panel
         const panel = document.createElement('div');
         panel.className = 'profile-panel';
         panel.id = 'profilePanel';
@@ -1170,7 +1084,6 @@ UI.Profile = {
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
         
-        // Create logout modal
         this.createLogoutModal();
     },
     
@@ -1224,76 +1137,6 @@ UI.Profile = {
         
         modalOverlay.appendChild(modal);
         document.body.appendChild(modalOverlay);
-        
-        // Add modal styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .modal h3 {
-                font-size: clamp(18px, 2vw, 22px);
-                font-weight: 700;
-                margin-bottom: 16px;
-                color: #1f2937;
-                line-height: 1.3;
-            }
-                
-            .modal p {
-                color: #6b7280;
-                margin-bottom: 32px;
-                line-height: 1.6;
-                font-size: 15px;
-            }
-                
-            .modal-actions {
-                display: flex;
-                gap: 16px;
-                justify-content: flex-end;
-            }
-                
-            .modal-btn {
-                padding: 14px 24px;
-                border-radius: 16px;
-                font-size: 15px;
-                font-weight: 600;
-                cursor: pointer;
-                border: none;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                font-family: inherit;
-                flex: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 48px;
-            }
-                
-            .modal-btn-cancel {
-                background: #f3f4f6;
-                color: #374151;
-                border: 1px solid #d1d5db;
-            }
-                
-            .modal-btn-cancel:hover {
-                background: #e5e7eb;
-                transform: translateY(-2px);
-            }
-                
-            .modal-btn-confirm {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-            }
-                
-            .modal-btn-confirm:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
-            }
-                
-            @media (max-width: 480px) {
-                .modal-actions {
-                    flex-direction: column;
-                    gap: 12px;
-                }
-            }
-        `;
-        document.head.appendChild(style);
     },
     
     showLogoutModal: function() {
@@ -1309,16 +1152,13 @@ UI.Profile = {
                 innerModal.style.opacity = '1';
             }
             
-            // Focus on cancel button
             const cancelBtn = document.getElementById('cancelLogout');
             if (cancelBtn) setTimeout(() => cancelBtn.focus(), 100);
         }, 10);
         
-        // Bind events
         document.getElementById('cancelLogout').addEventListener('click', () => this.hideLogoutModal());
         document.getElementById('confirmLogout').addEventListener('click', () => this.performLogout());
         
-        // Escape key handler
         const handleEscKey = (e) => {
             if (e.key === 'Escape' && modal.style.display === 'flex') {
                 this.hideLogoutModal();
@@ -1354,27 +1194,23 @@ UI.Profile = {
             if (window.Auth && window.Auth.authLogout) {
                 await window.Auth.authLogout();
                 
-                // Call UI.afterLogout
                 UI.afterLogout();
                 
-                // Show success message
                 if (window.UI.Toast) {
                     window.UI.Toast.success('Berhasil logout!');
                 }
                 
-                 // ✅ FIX DISINI:
-            if (window.Auth.redirectToLogin) {
-                window.Auth.redirectToLogin(); // Smart redirect
+                if (window.Auth.redirectToLogin) {
+                    window.Auth.redirectToLogin();
+                } else {
+                    window.location.href = '/AlbEdu/login.html';
+                }
             } else {
-                window.location.href = '/AlbEdu/login.html'; // Fallback
+                throw new Error('Auth system tidak ditemukan');
             }
-            
-        } else {
-            throw new Error('Auth system tidak ditemukan');
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        UI.hideAuthLoading();
+        } catch (error) {
+            console.error('Logout error:', error);
+            UI.hideAuthLoading();
             
             if (window.UI.Toast) {
                 window.UI.Toast.error('Gagal logout: ' + (error.message || 'Terjadi kesalahan'));
@@ -1385,7 +1221,6 @@ UI.Profile = {
     // ==================== KEYBOARD NAVIGATION ====================
     initKeyboardNavigation: function() {
         document.addEventListener('keydown', (e) => {
-            // ESC key untuk menutup panel atau modal
             if (e.key === 'Escape') {
                 const modal = document.getElementById('logoutModal');
                 const overlay = document.getElementById('profileOverlay');
@@ -1399,7 +1234,6 @@ UI.Profile = {
                 }
             }
             
-            // Tab key untuk focus trap di panel
             if (e.key === 'Tab' && document.getElementById('profileOverlay')?.style.display === 'flex') {
                 const focusableElements = document.querySelectorAll('#profilePanel button, #profilePanel input, #profilePanel [tabindex]:not([tabindex="-1"])');
                 const firstElement = focusableElements[0];
@@ -1414,596 +1248,6 @@ UI.Profile = {
                 }
             }
         });
-    },
-    
-    // ==================== CSS INJECTION ====================
-    injectProfileCSS: function() {
-        if (document.querySelector('#profile-css')) return;
-        
-        const style = document.createElement('style');
-        style.id = 'profile-css';
-        
-        // CSS dari PrototypeV2 dengan modifikasi minimal
-        style.textContent = `
-            /* ==================== ANIMASI HALUS ==================== */
-            @keyframes panelIn {
-                0% { transform: translateY(20px) scale(0.97); opacity: 0; }
-                100% { transform: translateY(0) scale(1); opacity: 1; }
-            }
-            
-            @keyframes modeFadeIn {
-                0% { opacity: 0; transform: translateY(12px); }
-                100% { opacity: 1; transform: translateY(0); }
-            }
-            
-            @keyframes modeFadeOut {
-                0% { opacity: 1; transform: translateY(0); }
-                100% { opacity: 0; transform: translateY(-8px); }
-            }
-            
-            .mode-transition-enter {
-                animation: modeFadeIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            }
-            
-            .mode-transition-exit {
-                animation: modeFadeOut 0.2s ease forwards;
-            }
-            
-            /* Micro-interaction avatar selection */
-            .avatar-item {
-                transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-            }
-            
-            .avatar-item.selected {
-                border-color: #6366f1;
-                box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 6px 20px rgba(99, 102, 241, 0.15);
-                transform: scale(1.05);
-            }
-            
-            /* Ripple feedback untuk tombol */
-            .btn {
-                transition: transform 0.12s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-            }
-            
-            .btn:active { transform: scale(0.98); }
-            .btn-primary:active:not(:disabled) { transform: translateY(-1px) scale(0.98); }
-            
-            /* Skeleton loading */
-            .skeleton {
-                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-                background-size: 200% 100%;
-                animation: shimmer 1.5s infinite;
-                border-radius: 16px;
-            }
-            
-            .skeleton-circle { border-radius: 50%; }
-            .skeleton-text { height: 16px; margin-bottom: 12px; }
-            .skeleton-text:last-child { margin-bottom: 0; }
-            .skeleton-text.short { width: 60%; }
-            
-            @keyframes shimmer {
-                0% { background-position: -200% 0; }
-                100% { background-position: 200% 0; }
-            }
-            
-            /* Reduced motion support */
-            @media (prefers-reduced-motion: reduce) {
-                .profile-panel,
-                .mode-transition-enter,
-                .mode-transition-exit,
-                .avatar-item,
-                .btn,
-                .profile-indicator,
-                .skeleton {
-                    animation: none !important;
-                    transition: none !important;
-                }
-                    
-                .avatar-item.selected { transform: none; }
-            }
-            
-            /* ==================== PROFILE HEADER ==================== */
-            .profile-header {
-                padding: 24px;
-                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-                color: white;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-shrink: 0;
-            }
-            
-            .profile-header h2 {
-                font-size: clamp(20px, 2vw, 28px);
-                font-weight: 700;
-                margin: 0;
-                line-height: 1.2;
-            }
-            
-            .close-profile {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                border: none;
-                background: rgba(255, 255, 255, 0.2);
-                color: white;
-                font-size: 20px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                flex-shrink: 0;
-            }
-            
-            .close-profile:hover {
-                background: rgba(255, 255, 255, 0.3);
-                transform: rotate(90deg);
-            }
-            
-            /* ==================== VIEW MODE ==================== */
-            .view-mode { padding: 24px; overflow-y: auto; flex: 1; }
-            
-            .avatar-section {
-                text-align: center;
-                margin-bottom: 28px;
-                position: relative;
-            }
-            
-            .view-avatar {
-                width: 140px;
-                height: 140px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 6px solid white;
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-                margin: 0 auto 20px;
-                background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            }
-            
-            .incomplete-badge {
-                position: absolute;
-                top: 10px;
-                right: calc(50% - 70px);
-                width: 36px;
-                height: 36px;
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 18px;
-                font-weight: 900;
-                border: 3px solid white;
-                box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-            }
-            
-            .user-info { text-align: center; margin-bottom: 32px; }
-            
-            .user-name {
-                font-size: clamp(24px, 3vw, 32px);
-                font-weight: 700;
-                color: #1f2937;
-                margin-bottom: 8px;
-                line-height: 1.2;
-                word-break: break-word;
-            }
-            
-            .user-email {
-                font-size: clamp(14px, 1.5vw, 16px);
-                color: #6b7280;
-                margin-bottom: 24px;
-                word-break: break-all;
-            }
-            
-            .user-stats {
-                background: #f8fafc;
-                border-radius: 20px;
-                padding: 20px;
-                display: inline-block;
-                border: 1px solid #e5e7eb;
-                min-width: 180px;
-            }
-            
-            .stat-item { text-align: center; }
-            
-            .stat-value {
-                display: block;
-                font-size: clamp(32px, 4vw, 42px);
-                font-weight: 800;
-                color: #6366f1;
-                line-height: 1;
-                margin-bottom: 8px;
-            }
-            
-            .stat-label {
-                font-size: clamp(13px, 1.5vw, 14px);
-                color: #6b7280;
-                font-weight: 500;
-            }
-            
-            .view-actions {
-                display: flex;
-                flex-direction: column;
-                gap: 16px;
-                max-width: 320px;
-                margin: 0 auto;
-            }
-            
-            /* ==================== EDIT MODE ==================== */
-            .edit-mode { padding: 24px; overflow-y: auto; flex: 1; }
-            
-            .edit-avatar-section { text-align: center; margin-bottom: 28px; }
-            
-            .edit-avatar {
-                width: 120px;
-                height: 120px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 5px solid white;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                margin-bottom: 16px;
-                cursor: pointer;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            }
-            
-            .edit-avatar:hover {
-                transform: scale(1.05);
-                box-shadow: 0 15px 40px rgba(99, 102, 241, 0.2);
-                border-color: #6366f1;
-            }
-            
-            .avatar-edit-btn {
-                background: none;
-                border: none;
-                color: #6366f1;
-                font-size: 15px;
-                font-weight: 600;
-                cursor: pointer;
-                padding: 8px 16px;
-                border-radius: 10px;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin: 0 auto;
-            }
-            
-            .avatar-edit-btn:hover { background: rgba(99, 102, 241, 0.1); }
-            
-            .edit-form { margin-bottom: 32px; }
-            .form-group { margin-bottom: 20px; }
-            
-            .form-group label {
-                display: block;
-                font-size: 14px;
-                font-weight: 600;
-                color: #374151;
-                margin-bottom: 10px;
-            }
-            
-            .form-group input {
-                width: 100%;
-                padding: 16px 20px;
-                border: 2px solid #e5e7eb;
-                border-radius: 16px;
-                font-size: 16px;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                outline: none;
-            }
-            
-            .form-group input:focus {
-                border-color: #6366f1;
-                box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-            }
-            
-            .edit-actions {
-                display: flex;
-                gap: 16px;
-                max-width: 400px;
-                margin: 0 auto;
-            }
-            
-            @media (max-width: 768px) {
-                .edit-actions { flex-direction: column; gap: 12px; max-width: 100%; }
-            }
-            
-            /* ==================== EDIT AVATAR MODE ==================== */
-            .edit-avatar-mode { padding: 24px; overflow-y: auto; flex: 1; }
-            
-            .edit-avatar-mode h3 {
-                font-size: clamp(18px, 2vw, 22px);
-                font-weight: 700;
-                color: #1f2937;
-                margin-bottom: 20px;
-                text-align: center;
-                line-height: 1.3;
-            }
-            
-            .avatar-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
-                margin-bottom: 28px;
-                padding: 8px;
-            }
-            
-            @media (max-width: 768px) {
-                .avatar-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 4px; }
-            }
-            
-            @media (max-width: 480px) {
-                .avatar-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-            }
-            
-            .avatar-item {
-                width: 100%;
-                aspect-ratio: 1;
-                border-radius: 16px;
-                overflow: hidden;
-                cursor: pointer;
-                border: 3px solid transparent;
-                background: #f8fafc;
-                position: relative;
-            }
-            
-            .avatar-item img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-            }
-            
-            /* CUSTOM AVATAR PREVIEW */
-            .custom-avatar-preview {
-                width: 100%;
-                display: none;
-                margin: 0 auto 28px;
-            }
-            
-            .custom-avatar-preview.active {
-                display: block;
-                animation: fadeIn 0.3s ease;
-            }
-            
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            
-            .preview-container {
-                position: relative;
-                width: 100%;
-                max-width: 280px;
-                margin: 0 auto;
-                border-radius: 20px;
-                overflow: hidden;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                background: #f8fafc;
-            }
-            
-            .preview-title {
-                position: absolute;
-                top: 12px;
-                left: 0;
-                right: 0;
-                text-align: center;
-                font-size: 12px;
-                color: #6b7280;
-                font-weight: 500;
-                z-index: 2;
-                opacity: 0.8;
-            }
-            
-            .preview-image {
-                width: 100%;
-                height: 280px;
-                object-fit: cover;
-                display: block;
-                background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            }
-            
-            .upload-avatar {
-                text-align: center;
-                margin-bottom: 28px;
-                padding: 0 16px;
-            }
-            
-            .edit-avatar-actions {
-                display: flex;
-                justify-content: center;
-                padding: 0 16px;
-            }
-            
-            /* ==================== BUTTON STYLES ==================== */
-            .btn {
-                padding: 18px 32px;
-                border-radius: 20px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                border: none;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                text-align: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                min-height: 56px;
-            }
-            
-            .btn-primary {
-                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-                color: white;
-                flex: 1;
-            }
-            
-            .btn-primary:hover:not(:disabled) {
-                transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
-            }
-            
-            .btn-primary:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-                transform: none !important;
-                box-shadow: none !important;
-            }
-            
-            .btn-secondary {
-                background: #f3f4f6;
-                color: #374151;
-                border: 1px solid #d1d5db;
-                flex: 1;
-            }
-            
-            .btn-secondary:hover {
-                background: #e5e7eb;
-                transform: translateY(-2px);
-            }
-            
-            .btn-danger {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-                flex: 1;
-            }
-            
-            .btn-danger:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
-            }
-            
-            .btn-edit {
-                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-                color: white;
-            }
-            
-            .btn-edit:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
-            }
-            
-            .btn-logout {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-            }
-            
-            .btn-logout:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
-            }
-            
-            .btn-back {
-                padding: 14px 28px;
-                background: #f3f4f6;
-                color: #374151;
-                border: 1px solid #d1d5db;
-                border-radius: 16px;
-                font-size: 15px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                width: 100%;
-                max-width: 280px;
-            }
-            
-            .btn-back:hover {
-                background: #e5e7eb;
-                transform: translateY(-2px);
-            }
-            
-            .btn-upload {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                padding: 16px 32px;
-                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                color: white;
-                border-radius: 16px;
-                font-size: 15px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                border: none;
-                width: 100%;
-                max-width: 280px;
-                margin: 0 auto;
-            }
-            
-            .btn-upload:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
-            }
-            
-            /* ==================== LOADING STATES ==================== */
-            .loading-spinner {
-                width: 20px;
-                height: 20px;
-                border: 3px solid rgba(255, 255, 255, 0.3);
-                border-top-color: white;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                display: inline-block;
-                flex-shrink: 0;
-                margin: 0;
-            }
-            
-            @keyframes spin { to { transform: rotate(360deg); } }
-            
-            .loading-container {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 12px;
-            }
-            
-            /* ==================== STATUS MESSAGES ==================== */
-            .status-message {
-                padding: 16px 20px;
-                border-radius: 16px;
-                margin-bottom: 24px;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                line-height: 1.5;
-            }
-            
-            .status-success {
-                background: #d1fae5;
-                color: #065f46;
-                border: 1px solid #a7f3d0;
-            }
-            
-            .status-error {
-                background: #fee2e2;
-                color: #991b1b;
-                border: 1px solid #fecaca;
-            }
-            
-            /* ==================== SCROLLBAR STYLING ==================== */
-            .profile-panel::-webkit-scrollbar { width: 6px; }
-            .profile-panel::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-            .profile-panel::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-            .profile-panel::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
-            
-            /* Hover state untuk desktop avatar grid */
-            @media (hover: hover) and (min-width: 769px) {
-                .avatar-item:hover:not(.selected) {
-                    transform: scale(1.03);
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-                }
-            }
-        `;
-        
-        document.head.appendChild(style);
     }
 };
 
@@ -2011,16 +1255,15 @@ UI.Profile = {
 // INITIALIZATION
 // =======================
 (function init() {
-    console.log('🚀 Initializing ByteWard UI v0.5.4...');
+    console.log('🚀 Initializing ByteWard UI v0.5.5...');
     
-    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (window.Auth?.currentUser) {
                     UI.Profile.init();
                 }
-                console.log('✅ ByteWard UI v0.5.4 siap');
+                console.log('✅ ByteWard UI v0.5.5 siap');
             }, 1000);
         });
     } else {
@@ -2028,12 +1271,12 @@ UI.Profile = {
             if (window.Auth?.currentUser) {
                 UI.Profile.init();
             }
-            console.log('✅ ByteWard UI v0.5.4 siap');
+            console.log('✅ ByteWard UI v0.5.5 siap');
         }, 1000);
     }
 })();
 
-// Export for module systems
+// Export untuk module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { UI: window.UI };
 }
@@ -2044,32 +1287,24 @@ if (typeof module !== 'undefined' && module.exports) {
 UI.handleLogin = async function() {
     console.log('🔐 Memulai proses login...');
     
-    // 1. SHOW LOADING
     this.showAuthLoading('Membuka Google Login...');
     
     try {
-        // 2. CALL AUTH LOGIN
         if (!window.Auth || !window.Auth.authLogin) {
             throw new Error('Auth system tidak tersedia');
         }
         
         await window.Auth.authLogin();
         
-        // 3. Auth akan otomatis panggil UI.afterLogin()
-        // 4. Auth akan otomatis panggil UI.hideAuthLoading() di finally
-        
         console.log('✅ Login flow selesai');
         
     } catch (error) {
         console.error('❌ Login error:', error);
         
-        // Ensure loading hidden
         this.hideAuthLoading();
-        
-        // Show error
         this.showLoginError(error.message);
         
-        throw error; // Re-throw untuk handling di caller
+        throw error;
     }
 };
 
@@ -2077,7 +1312,6 @@ UI.handleLogin = async function() {
 UI.initializeForLogin = function() {
     console.log('🔄 Menginisialisasi UI untuk login page');
     
-    // Inject loading CSS jika belum
     if (!document.querySelector('#loading-css')) {
         const style = document.createElement('style');
         style.id = 'loading-css';
@@ -2157,4 +1391,4 @@ UI.initializeForLogin = function() {
     console.log('✅ UI siap untuk login page');
 };
 
-console.log('🎨 UI Module v0.5.4 - Production Ready with Auth System');
+console.log('🎨 UI Module v0.5.5 - Production Ready with External CSS');
