@@ -96,7 +96,7 @@
                         <i class="fas fa-bell"></i>
                         <span class="badge">3</span>
                     </button>
-                    <button class="logout-btn">
+                    <button class="logout-btn" id="logout-btn-header">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -141,68 +141,17 @@
                                             <p id="admin-id">ADM-001</p>
                                         </div>
                                         <div class="detail-item">
-                                            <label><i class="fas fa-calendar-alt"></i> Bergabung Sejak</label>
-                                            <p id="admin-join-date">1 Januari 2024</p>
-                                        </div>
-                                        <div class="detail-item">
                                             <label><i class="fas fa-clock"></i> Terakhir Login</label>
                                             <p id="admin-last-login">Hari ini, 10:30</p>
                                         </div>
-                                        <div class="detail-item">
-                                            <label><i class="fas fa-globe"></i> Zona Waktu</label>
-                                            <p>WIB (GMT+7)</p>
-                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="detail-section">
-                                    <h3><i class="fas fa-chart-line"></i> Statistik Admin</h3>
-                                    <div class="stats-grid">
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fas fa-file-alt"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <h4 id="total-exams">0</h4>
-                                                <p>Ujian Dibuat</p>
-                                            </div>
-                                        </div>
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fas fa-users"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <h4 id="total-students">0</h4>
-                                                <p>Siswa Aktif</p>
-                                            </div>
-                                        </div>
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fas fa-check-circle"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <h4 id="exams-graded">0</h4>
-                                                <p>Ujian Dinilai</p>
-                                            </div>
-                                        </div>
-                                        <div class="stat-card">
-                                            <div class="stat-icon">
-                                                <i class="fas fa-chart-bar"></i>
-                                            </div>
-                                            <div class="stat-content">
-                                                <h4 id="avg-score">0</h4>
-                                                <p>Rata-rata Nilai</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Bagian Pengaturan Profil dihapus -->
-                                
+                                <!-- Tombol Edit Profil -->
                                 <div class="profile-actions">
-                                    <button class="btn-action btn-logout" id="btn-admin-logout">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                        <span>Logout</span>
+                                    <button class="btn-action btn-edit" id="btn-edit-profile">
+                                        <i class="fas fa-user-edit"></i>
+                                        <span>Edit Profil</span>
                                     </button>
                                 </div>
                             </div>
