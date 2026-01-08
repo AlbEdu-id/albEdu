@@ -530,65 +530,39 @@ body {
     font-weight: 600;
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
+/* Tombol Edit Profil */
+.profile-actions {
+    margin-top: 30px;
+    text-align: center;
 }
 
-.stat-card {
-    background: white;
-    border: 1px solid #e2e8f0;
+.btn-action {
+    padding: 16px 32px;
     border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    border-color: #0ea5e9;
-}
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-    display: flex;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #0ea5e9;
-    font-size: 20px;
+    gap: 10px;
+    transition: all 0.3s ease;
+    min-width: 200px;
 }
 
-.stat-content h4 {
-    font-size: 24px;
-    color: #0c4a6e;
-    margin-bottom: 4px;
-    font-weight: 700;
+.btn-edit {
+    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+    color: white;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
 }
 
-.stat-content p {
-    color: #64748b;
-    font-size: 14px;
-}
-
-.btn-logout {
-    background: white;
-    color: #ef4444;
-    border: 2px solid #fecaca;
-}
-
-.btn-logout:hover {
-    background: #fee2e2;
+.btn-edit:hover {
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
 }
 
-/* Modal Styles untuk Profil */
+/* Modal Edit Profil */
 .profile-modal {
     position: fixed;
     top: 0;
@@ -637,6 +611,9 @@ body {
     color: #0c4a6e;
     font-size: 20px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .modal-close {
@@ -794,14 +771,6 @@ body {
         padding: 20px;
     }
     
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .profile-actions {
-        flex-direction: column;
-    }
-    
     .avatar-picker {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -823,10 +792,6 @@ body {
     .detail-grid {
         grid-template-columns: 1fr;
     }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
 }
 
 @media (max-width: 480px) {
@@ -836,10 +801,6 @@ body {
     
     .content-header h2 {
         font-size: 24px;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
     }
     
     .profile-avatar {
@@ -856,6 +817,11 @@ body {
         flex-direction: column;
         gap: 10px;
         text-align: center;
+    }
+    
+    .btn-action {
+        width: 100%;
+        min-width: auto;
     }
 }
 
