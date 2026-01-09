@@ -1,4 +1,7 @@
 // create.js - Sidebar Animation SUPER "NIAT" dengan CASCADE OVERLAP
+// + Profil Admin dengan Edit Terbatas (tanpa edit email) dan Avatar Fix
+// + UI Desktop Lebih "Rame"
+
 document.addEventListener('DOMContentLoaded', function() {
     
   /* =======================  
@@ -667,22 +670,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /* =======================  
-   PROFIL ADMIN FUNCTIONALITY (VERSI DIPERBAIKI)  
+   PROFIL ADMIN FUNCTIONALITY (EDIT PROFIL VERSI SEDERHANA)  
+   - Email tidak bisa diubah  
+   - Avatar fix dengan error handling  
 ======================= */  
 
 // Initialize Admin Profile
 function initializeAdminProfile() {
     console.log('🔄 Menginisialisasi Profil Admin');
     
-    // Load data dari Auth jika tersedia
+    // Load data from Auth if available
     if (window.Auth && window.Auth.userData) {
         updateAdminProfile(window.Auth.userData);
     } else {
-        // Gunakan data admin default dengan avatar yang pasti bekerja
+        // Use default admin data
         updateAdminProfile({
             nama: 'Admin AlbEdu',
             email: 'admin@alb.edu',
-            foto_profil: getDefaultAvatar('Admin AlbEdu'),
+            foto_profil: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin&backgroundColor=0ea5e9',
             id: 'ADM-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
             peran: 'Administrator'
         });
@@ -692,75 +697,45 @@ function initializeAdminProfile() {
     setupProfileEventListeners();
 }
 
-// Generate avatar URL yang lebih reliable
-function getDefaultAvatar(name) {
-    // Gunakan Gravatar atau DiceBear dengan seed yang konsisten
-    const cleanName = name.replace(/\s+/g, '').toLowerCase();
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanName}&backgroundColor=0ea5e9&backgroundType=gradientLinear&mouth=smile&eyes=happy`;
-}
-
 // Update admin profile display dengan error handling yang lebih baik
 function updateAdminProfile(userData) {
-    // Update avatar dengan fallback yang lebih baik
+    // Update avatar dengan error handling
     const avatarElement = document.getElementById('admin-avatar');
-    const avatarUrl = userData.foto_profil || getDefaultAvatar(userData.nama);
     
-    // Buat elemen gambar dengan multiple fallback
+    // Hapus konten sebelumnya
+    avatarElement.innerHTML = '';
+    
+    // Coba load gambar, jika gagal gunakan fallback icon
     const img = new Image();
     img.onload = function() {
         avatarElement.innerHTML = '';
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '50%';
         avatarElement.appendChild(img);
     };
     
     img.onerror = function() {
-        // Fallback 1: Coba avatar alternatif
-        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nama)}&background=0ea5e9&color=fff&size=128&bold=true`;
-        const fallbackImg = new Image();
-        fallbackImg.onload = function() {
-            avatarElement.innerHTML = '';
-            fallbackImg.style.width = '100%';
-            fallbackImg.style.height = '100%';
-            fallbackImg.style.objectFit = 'cover';
-            fallbackImg.style.borderRadius = '50%';
-            avatarElement.appendChild(fallbackImg);
-        };
-        fallbackImg.onerror = function() {
-            // Fallback 2: Gunakan SVG lokal
-            avatarElement.innerHTML = `
-                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:white;font-size:48px;border-radius:50%;">
-                    ${userData.nama.charAt(0).toUpperCase()}
-                </div>
-            `;
-        };
-        fallbackImg.src = fallbackUrl;
-        fallbackImg.alt = userData.nama;
+        avatarElement.innerHTML = '<i class="fas fa-user-circle"></i>';
+        console.log('Avatar gagal dimuat, menggunakan fallback');
     };
     
-    img.src = avatarUrl;
-    img.alt = userData.nama;
+    img.src = userData.foto_profil || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userData.nama || 'Admin')}&backgroundColor=0ea5e9&radius=50`;
+    img.alt = userData.nama || 'Admin AlbEdu';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '50%';
     
     // Update name and email
     document.getElementById('admin-name').textContent = userData.nama || 'Admin AlbEdu';
     document.getElementById('admin-email').textContent = userData.email || 'admin@alb.edu';
     document.getElementById('admin-id').textContent = userData.id || 'ADM-001';
     
-    // Set last login dengan format yang lebih menarik
+    // Set last login
     const lastLogin = new Date();
-    const options = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-    };
-    document.getElementById('admin-last-login').textContent = 
-        lastLogin.toLocaleString('id-ID', options) + ' WIB';
+    document.getElementById('admin-last-login').textContent = lastLogin.toLocaleString('id-ID', {
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 // Setup event listeners for profile actions
@@ -778,7 +753,7 @@ function setupProfileEventListeners() {
     }
 }
 
-// Show Edit Profile Modal (Hanya NAMA yang bisa diubah)
+// Show Edit Profile Modal (Sederhana) - Email tidak bisa diubah
 function showEditProfileModal() {
     const modal = document.createElement('div');
     modal.className = 'profile-modal';
@@ -795,40 +770,25 @@ function showEditProfileModal() {
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="editFullName">
-                        <i class="fas fa-user"></i> Nama Lengkap
-                    </label>
+                    <label for="editFullName">Nama Lengkap</label>
                     <input type="text" id="editFullName" class="form-control" 
-                           value="${currentName}" placeholder="Masukkan nama lengkap" maxlength="50">
-                    <small class="form-text" style="color:#64748b;font-size:12px;margin-top:5px;">
-                        Nama akan ditampilkan di semua halaman admin
-                    </small>
+                           value="${currentName}" placeholder="Masukkan nama lengkap">
                 </div>
-                
                 <div class="form-group">
-                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <label for="editAdminEmail">Email</label>
                     <div class="email-display">
-                        <i class="fas fa-at"></i>
-                        <span>${currentEmail}</span>
-                        <div class="email-locked">
-                            <i class="fas fa-lock"></i>
-                            <small>Email tidak dapat diubah</small>
+                        <input type="email" id="editAdminEmail" class="form-control" 
+                               value="${currentEmail}" readonly disabled>
+                        <div class="email-info">
+                            <i class="fas fa-info-circle"></i>
+                            <small>Email tidak dapat diubah karena digunakan untuk login sistem</small>
                         </div>
                     </div>
                 </div>
-                
-                <div class="password-change-info">
-                    <i class="fas fa-info-circle"></i>
-                    <p>Untuk mengubah password, silakan gunakan fitur "Reset Password" di halaman login</p>
-                </div>
             </div>
             <div class="modal-actions">
-                <button class="btn-modal btn-modal-cancel" id="cancelEdit">
-                    <i class="fas fa-times"></i> Batal
-                </button>
-                <button class="btn-modal btn-modal-save" id="saveEdit">
-                    <i class="fas fa-save"></i> Simpan Perubahan
-                </button>
+                <button class="btn-modal btn-modal-cancel" id="cancelEdit">Batal</button>
+                <button class="btn-modal btn-modal-save" id="saveEdit">Simpan Perubahan</button>
             </div>
         </div>
     `;
@@ -839,7 +799,6 @@ function showEditProfileModal() {
     setTimeout(() => {
         modal.classList.add('active');
         document.getElementById('editFullName').focus();
-        document.getElementById('editFullName').select();
     }, 10);
     
     // Event listeners
@@ -861,23 +820,15 @@ function showEditProfileModal() {
             return;
         }
         
-        // Update display dengan animasi
-        const nameElement = document.getElementById('admin-name');
-        nameElement.style.transform = 'scale(0.95)';
-        nameElement.style.opacity = '0.8';
-        
-        setTimeout(() => {
-            nameElement.textContent = newName;
-            nameElement.style.transform = 'scale(1)';
-            nameElement.style.opacity = '1';
-        }, 200);
+        // Update display
+        document.getElementById('admin-name').textContent = newName;
         
         // Update in Auth system if available
         if (window.Auth && window.Auth.userData) {
             window.Auth.userData.nama = newName;
             
             // Update in Firestore if user is logged in
-            if (window.Auth.currentUser && window.firebase) {
+            if (window.Auth.currentUser) {
                 firebase.firestore().collection('users').doc(window.Auth.currentUser.uid).update({
                     nama: newName,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -890,7 +841,7 @@ function showEditProfileModal() {
             }
         }
         
-        showToast('Nama berhasil diperbarui', 'success');
+        showToast('Profil berhasil diperbarui', 'success');
         closeModal(modal);
     });
     
@@ -898,37 +849,26 @@ function showEditProfileModal() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal(modal);
     });
-    
-    // Close on ESC key
-    document.addEventListener('keydown', function escHandler(e) {
-        if (e.key === 'Escape') {
-            closeModal(modal);
-            document.removeEventListener('keydown', escHandler);
-        }
-    });
 }
 
-// Show Avatar Picker
+// Show Avatar Picker dengan preview real-time
 function showAvatarPicker() {
     const modal = document.createElement('div');
     modal.className = 'profile-modal';
     modal.id = 'avatarPickerModal';
     
-    // Avatar options dengan URL yang lebih reliable
-    const avatars = [
-        { id: 1, style: 'avataaars', seed: 'Admin1', color: '0ea5e9' },
-        { id: 2, style: 'adventurer', seed: 'Admin2', color: '0ea5e9' },
-        { id: 3, style: 'bottts', seed: 'Admin3', color: '0ea5e9' },
-        { id: 4, style: 'micah', seed: 'Admin4', color: '0ea5e9' },
-        { id: 5, style: 'big-ears', seed: 'Admin5', color: '0ea5e9' },
-        { id: 6, style: 'croodles', seed: 'Admin6', color: '0ea5e9' },
-        { id: 7, style: 'miniavs', seed: 'Admin7', color: '0ea5e9' },
-        { id: 8, style: 'personas', seed: 'Admin8', color: '0ea5e9' },
-        { id: 9, style: 'pixel-art', seed: 'Admin9', color: '0ea5e9' },
-        { id: 10, style: 'identicon', seed: 'Admin10', color: '0ea5e9' },
-        { id: 11, style: 'fun-emoji', seed: 'Admin11', color: '0ea5e9' },
-        { id: 12, style: 'shapes', seed: 'Admin12', color: '0ea5e9' }
-    ];
+    // Generate avatars menggunakan URL yang lebih stabil
+    const avatars = [];
+    const colors = ['0ea5e9', '10b981', 'f59e0b', 'ef4444', '8b5cf6', 'ec4899'];
+    
+    for (let i = 1; i <= 15; i++) {
+        const color = colors[(i - 1) % colors.length];
+        avatars.push({
+            id: `admin-avatar${i}`,
+            url: `https://api.dicebear.com/7.x/avataaars/svg?seed=Admin${i}&backgroundColor=${color}`,
+            color: color
+        });
+    }
     
     modal.innerHTML = `
         <div class="modal-content">
@@ -937,33 +877,27 @@ function showAvatarPicker() {
                 <button class="modal-close" id="closeAvatarModal">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="color: #64748b; margin-bottom: 20px; text-align: center;">
-                    Pilih avatar untuk profil Anda. Klik untuk melihat preview.
-                </p>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div id="avatarPreview" style="width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 15px; overflow: hidden; border: 3px solid #0ea5e9; background: #f0f9ff;">
+                        <i class="fas fa-user-circle" style="font-size: 80px; color: #0ea5e9; line-height: 100px;"></i>
+                    </div>
+                    <p style="color: #64748b; font-size: 14px;">Preview Avatar</p>
+                </div>
+                <p style="color: #64748b; margin-bottom: 20px;">Pilih avatar untuk profil Anda:</p>
                 <div class="avatar-picker" id="avatarPicker">
                     ${avatars.map((avatar, index) => `
                         <div class="avatar-option ${index === 0 ? 'selected' : ''}" 
-                             data-avatar="https://api.dicebear.com/7.x/${avatar.style}/svg?seed=${avatar.seed}&backgroundColor=${avatar.color}">
-                            <img src="https://api.dicebear.com/7.x/${avatar.style}/svg?seed=${avatar.seed}&backgroundColor=${avatar.color}" 
-                                 alt="Avatar ${index + 1}"
-                                 onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"45\" fill=\"#0ea5e9\"/><text x=\"50\" y=\"55\" text-anchor=\"middle\" dy=\".3em\" font-size=\"40\" fill=\"#fff\">${String.fromCharCode(65 + index)}</text></svg>'">
+                             data-avatar="${avatar.url}"
+                             data-color="${avatar.color}">
+                            <img src="${avatar.url}" alt="Avatar ${index + 1}" 
+                                 onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Avatar${index}&backgroundColor=${avatar.color}'">
                         </div>
                     `).join('')}
                 </div>
-                <div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px;">
-                    <small style="color: #64748b;">
-                        <i class="fas fa-info-circle"></i>
-                        Avatar akan diperbarui secara instan. Anda dapat mengubahnya kapan saja.
-                    </small>
-                </div>
             </div>
             <div class="modal-actions">
-                <button class="btn-modal btn-modal-cancel" id="cancelAvatar">
-                    <i class="fas fa-times"></i> Batal
-                </button>
-                <button class="btn-modal btn-modal-save" id="saveAvatar">
-                    <i class="fas fa-check"></i> Terapkan Avatar
-                </button>
+                <button class="btn-modal btn-modal-cancel" id="cancelAvatar">Batal</button>
+                <button class="btn-modal btn-modal-save" id="saveAvatar">Simpan Avatar</button>
             </div>
         </div>
     `;
@@ -977,46 +911,52 @@ function showAvatarPicker() {
     
     // Event listeners
     let selectedAvatar = avatars[0].url;
+    const previewContainer = modal.querySelector('#avatarPreview');
+    
+    // Update preview saat avatar dipilih
+    function updatePreview(avatarUrl) {
+        previewContainer.innerHTML = '';
+        const img = new Image();
+        img.onload = function() {
+            previewContainer.appendChild(img);
+        };
+        img.onerror = function() {
+            previewContainer.innerHTML = '<i class="fas fa-user-circle" style="font-size: 80px; color: #0ea5e9; line-height: 100px;"></i>';
+        };
+        img.src = avatarUrl;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+    }
     
     modal.querySelectorAll('.avatar-option').forEach(option => {
         option.addEventListener('click', () => {
             modal.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
             option.classList.add('selected');
             selectedAvatar = option.dataset.avatar;
+            updatePreview(selectedAvatar);
         });
     });
+    
+    // Initialize preview dengan avatar pertama
+    updatePreview(selectedAvatar);
     
     modal.querySelector('#closeAvatarModal').addEventListener('click', () => closeModal(modal));
     modal.querySelector('#cancelAvatar').addEventListener('click', () => closeModal(modal));
     
     modal.querySelector('#saveAvatar').addEventListener('click', () => {
         // Update avatar display
-        const avatarElement = document.getElementById('admin-avatar');
-        const img = new Image();
-        img.onload = function() {
-            avatarElement.innerHTML = '';
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '50%';
-            avatarElement.appendChild(img);
-        };
-        img.onerror = function() {
-            avatarElement.innerHTML = `
-                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:white;font-size:48px;border-radius:50%;">
-                    A
-                </div>
-            `;
-        };
-        img.src = selectedAvatar;
-        img.alt = 'Avatar Baru';
+        updateAdminProfile({
+            ...window.Auth?.userData || {},
+            foto_profil: selectedAvatar
+        });
         
         // Update in Auth system if available
         if (window.Auth && window.Auth.userData) {
             window.Auth.userData.foto_profil = selectedAvatar;
             
             // Update in Firestore if user is logged in
-            if (window.Auth.currentUser && window.firebase) {
+            if (window.Auth.currentUser) {
                 firebase.firestore().collection('users').doc(window.Auth.currentUser.uid).update({
                     foto_profil: selectedAvatar,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1092,8 +1032,27 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+// Pastikan avatar selalu konsisten
+function ensureAvatarConsistency() {
+    const avatarElement = document.getElementById('admin-avatar');
+    if (avatarElement) {
+        const img = avatarElement.querySelector('img');
+        if (img && img.src) {
+            img.onerror = function() {
+                const adminName = document.getElementById('admin-name').textContent;
+                this.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(adminName)}&backgroundColor=0ea5e9`;
+            };
+        }
+    }
+}
+
 // Initialize admin profile on page load if profil tab is active
 document.addEventListener('DOMContentLoaded', function() {
+    ensureAvatarConsistency();
+    
+    // Refresh avatar setiap 5 menit untuk memastikan konsistensi
+    setInterval(ensureAvatarConsistency, 300000);
+    
     const hash = window.location.hash.substring(1) || 'profil';
     if (hash === 'profil') {
         setTimeout(() => {
